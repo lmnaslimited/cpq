@@ -1,11 +1,11 @@
-app_name = "crm"
-app_title = "Frappe CRM"
-app_publisher = "Frappe Technologies Pvt. Ltd."
-app_description = "Kick-ass Open Source CRM"
-app_email = "shariq@frappe.io"
+app_name = "cpq"
+app_title = "LENS CPQ"
+app_publisher = "LMNAs Cloud Solutions LLP."
+app_description = "Quoting Platform for Newage Sales"
+app_email = "hello@lmnas.com"
 app_license = "AGPLv3"
 app_icon_url = "/assets/crm/images/logo.svg"
-app_icon_title = "CRM"
+app_icon_title = "CPQ"
 app_icon_route = "/crm"
 
 # Apps
@@ -14,9 +14,9 @@ app_icon_route = "/crm"
 # required_apps = []
 add_to_apps_screen = [
 	{
-		"name": "crm",
+		"name": "cpq",
 		"logo": "/assets/crm/images/logo.svg",
-		"title": "CRM",
+		"title": "CPQ",
 		"route": "/crm",
 		"has_permission": "crm.api.check_app_permission",
 	}

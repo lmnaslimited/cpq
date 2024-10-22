@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2024-10-09 20:43:00.454712",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "design_template",
+  "status",
+  "design_attributes",
+  "naming_series",
+  "design_owner"
+ ],
+ "fields": [
+  {
+   "fieldname": "design_template",
+   "fieldtype": "Data",
+   "label": "Design Template"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nItem Created"
+  },
+  {
+   "fieldname": "design_attributes",
+   "fieldtype": "Table",
+   "label": "Design Attributes",
+   "options": "Item Variant Attribute"
+  },
+  {
+   "default": "design_template.YYYY.####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "design_template.YYYY.####"
+  },
+  {
+   "fieldname": "design_owner",
+   "fieldtype": "Data",
+   "label": "Design Owner"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-10-10 11:35:37.634020",
+ "modified_by": "Administrator",
+ "module": "FCRM",
+ "name": "Design",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

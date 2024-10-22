@@ -105,6 +105,10 @@ import { notificationsStore } from '@/stores/notifications'
 import { computed, h } from 'vue'
 import { mobileSidebarOpened as sidebarOpened } from '@/composables/settings'
 
+//cpq custom function import
+import { extraLinks, getCustomIcon } from '@/components/Layouts/cpqSidebarMenu'
+
+
 const { getPinnedViews, getPublicViews } = viewsStore()
 
 const links = [
@@ -148,6 +152,8 @@ const links = [
     icon: Email2Icon,
     to: 'Email Templates',
   },
+  ...extraLinks
+
 ]
 
 const allViews = computed(() => {
@@ -208,7 +214,7 @@ function getIcon(routeName, icon) {
     case 'Call Logs':
       return PhoneIcon
     default:
-      return PinIcon
+      return getCustomIcon(routeName) || PinIcon
   }
 }
 </script>

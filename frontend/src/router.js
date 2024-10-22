@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { userResource } from '@/stores/user'
 import { sessionStore } from '@/stores/session'
+import { getCustomRoutes } from './customCpq/cpqApi'
 
 const routes = [
   {
@@ -102,6 +103,10 @@ const routes = [
     name: 'Invalid Page',
     component: () => import('@/pages/InvalidPage.vue'),
   },
+
+  //Start of CPQ Changes
+  ...getCustomRoutes()
+  
 ]
 
 const handleMobileView = (componentName) => {

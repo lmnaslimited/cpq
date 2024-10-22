@@ -117,6 +117,9 @@ import { FeatherIcon } from 'frappe-ui'
 import { useStorage } from '@vueuse/core'
 import { computed, h } from 'vue'
 
+//cpq custom function import
+import { extraLinks, getCustomIcon } from '@/components/Layouts/cpqSidebarMenu'
+
 const { getPinnedViews, getPublicViews } = viewsStore()
 const { toggle: toggleNotificationPanel } = notificationsStore()
 
@@ -163,6 +166,7 @@ const links = [
     icon: Email2Icon,
     to: 'Email Templates',
   },
+  ...extraLinks
 ]
 
 const allViews = computed(() => {
@@ -222,8 +226,10 @@ function getIcon(routeName, icon) {
       return NoteIcon
     case 'Call Logs':
       return PhoneIcon
+
+    //passed the cpq icon
     default:
-      return PinIcon
+      return getCustomIcon(routeName) || PinIcon
   }
 }
 </script>

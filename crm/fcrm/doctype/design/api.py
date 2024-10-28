@@ -51,7 +51,8 @@ def save_design(data):
                 # Use the field label as the key instead of the fieldname
                 child_table_data.append({
                     'attribute': field_info['label'],  # Use label as the key
-                    'attribute_value': value
+                    'attribute_value': value,
+                    'numeric_values': field_info['numeric_values']
                 })
 
         # Create a new document for your target DocType

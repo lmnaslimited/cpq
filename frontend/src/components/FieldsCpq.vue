@@ -1,8 +1,8 @@
-<!-- <template>
+<template>
   <Fields :sections="sections" :data="data">
-    <template #custom-fields="{ field, data }"> -->
+    <template #custom-fields="{ field, data }">
       <!-- Custom fields for Design CPQ -->
-      <!-- <div v-if="field.type === 'Range'">
+      <div v-if="field.type === 'Range'">
         <input
           type="range"
           :class="field.name"
@@ -14,8 +14,8 @@
           @change="handleRangeChange(field.name, $event.target.value, field.min, field.max, field.step)"
           @blur="handleRangeChange(field.name, data[field.name], field.min, field.max, field.step)"
           style="width:250px; accent-color: black;"
-        /> -->
-        <!-- <p
+        />
+        <p
           :id="field.name"
           class="text-gray-600 rounded px-2"
           contenteditable="true"
@@ -23,8 +23,8 @@
           style="background-color: #f5f5f5;"
         >
           {{ data[field.name] }}
-        </p> -->
-        <!-- <span v-if="rangeErrors[field.name]" class="text-red-500">{{ rangeErrors[field.name] }}</span>
+        </p>
+        <span v-if="rangeErrors[field.name]" class="text-red-500">{{ rangeErrors[field.name] }}</span>
       </div>
       <div v-else-if="field.type === 'textbox'">
         <FormControl
@@ -38,9 +38,9 @@
       </div>
     </template>
   </Fields>
-</template> -->
+</template>
 
-<!-- <script setup>
+<script setup>
 import Fields from '@/components/Fields.vue'
 import { usersStore } from '@/stores/users'
 import { reactive, watch, onMounted } from 'vue'
@@ -50,9 +50,9 @@ const { getUser } = usersStore()
 const props = defineProps({
   sections: Array,
   data: Object,
-}) -->
+})
 
-<!-- // Added for Design CPQ
+// Added for Design CPQ
 
 const rangeErrors = reactive({})
 
@@ -141,161 +141,6 @@ onMounted(() => {
     (newValue, oldValue) => {
       if (newValue !== oldValue && newValue.length > 0) {
         setInitialValues()
-      }
-    }
-  )
-})
-</script>
-
-<style scoped>
-:deep(.form-control.prefix select) {
-  padding-left: 2rem;
-}
-</style> -->
-
-<template>
-  <Fields :sections="sections" :data="data">
-    <template #custom-fields="{ sections, data }">
-      <div v-for="section in sections" :key="section.id">
-        <div v-for="field in section.fields" :key="field.name">
-          <!-- Debugging: Log field type -->
-          <pre>{{ field }}</pre> <!-- This will display the entire field object -->
-
-          <!-- Custom fields for Design CPQ -->
-          <div v-if="field.type === 'Range'">
-            <input
-              type="range"
-              :class="field.name"
-              :min="field.min"
-              :max="field.max"
-              :step="field.step"
-              v-model="data[field.name]"
-              @input="updateRangeDisplay(field.name, $event.target.value)"
-              @change="handleRangeChange(field.name, $event.target.value, field.min, field.max, field.step)"
-              @blur="handleRangeChange(field.name, data[field.name], field.min, field.max, field.step)"
-              style="width:250px; accent-color: black;"
-            />
-            <p
-              :id="field.name"
-              class="text-gray-600 rounded px-2"
-              contenteditable="true"
-              @input="updateRangeValue(field.name, $event.target.innerText, field.min, field.max, field.step)"
-              style="background-color: #f5f5f5;"
-            >
-              {{ data[field.name] }}
-            </p>
-            <span v-if="rangeErrors[field.name]" class="text-red-500">{{ rangeErrors[field.name] }}</span>
-            <button @click="resetRangeValue(field.name, field.min)">Reset</button>
-          </div>
-          <div v-else-if="field.type === 'textbox'">
-            <FormControl
-              type="textarea"
-              size="sm"
-              variant="subtle"
-              :placeholder="__(field.placeholder)"
-              v-model="data[field.name]"
-            />
-          </div>
-          <!-- Fallback for unsupported field types -->
-          <div v-else>
-            <p>Unsupported field type: {{ field.type }}</p>
-          </div>
-        </div>
-      </div>
-    </template>
-  </Fields>
-</template>
-
-<script setup>
-import Fields from '@/components/Fields.vue'
-import { reactive, watch, onMounted, computed } from 'vue'
-
-const props = defineProps({
-  sections: Array,
-  data: Object,
-})
-
-const rangeErrors = reactive({})
-
-// Validation function for the Range input
-const validateRangeIncrement = (name, value, min, max, step) => {
-  const numericValue = parseFloat(value)
-  const numericMin = parseFloat(min)
-  const numericMax = parseFloat(max)
-  const numericStep = parseFloat(step)
-
-  if (isNaN(numericValue)) {
-    return 'Invalid Input.'
-  }
-
-  if (numericValue < numericMin || numericValue > numericMax) {
-    return `Value should be between ${min} and ${max}`
-  }
-
-  if (numericStep > 0 && (numericValue - numericMin) % numericStep !== 0) {
-    return `Value should increment by ${step}`
-  }
-
-  return null
-}
-
-const updateRangeDisplay = (name, value) => {
-  modifiedData[name] = value
-  const sizeElement = document.getElementById(name)
-  if (sizeElement) {
-    sizeElement.innerHTML = value
-  }
-}
-
-const handleRangeChange = (name, value, min, max, step) => {
-  const errorMsg = validateRangeIncrement(name, value, min, max, step)
-  rangeErrors[name] = errorMsg
-  if (!errorMsg) {
-    modifiedData[name] = value; // Update only if there are no validation errors
-  }
-}
-
-const updateRangeValue = (name, value, min, max, step) => {
-  const errorMsg = validateRangeIncrement(name, value, min, max, step)
-  rangeErrors[name] = errorMsg
-  if (!errorMsg) {
-    modifiedData[name] = value; // Update only if there are no validation errors
-  }
-  const rangeElement = document.getElementsByClassName(name);
-  if (rangeElement.length > 0) {
-    rangeElement[0].value = value; // Synchronize the range input value
-  }
-}
-
-const resetRangeValue = (name, min) => {
-  modifiedData[name] = min;
-  updateRangeDisplay(name, min);
-  rangeErrors[name] = null; // Clear any existing errors
-}
-
-const setInitialValues = () => {
-  for (const section of props.sections) {
-    for (const field of section.fields) {
-      if (field.type === 'Range') {
-        const name = field.name;
-        const min = field.min;
-        if (modifiedData[name] === undefined || modifiedData[name] === null || modifiedData[name] === '') {
-          modifiedData[name] = min; // Set default value from the min
-          updateRangeValue(name, min, min, field.max, field.step); // Initialize display
-          updateRangeDisplay(name, min); // Set display text
-        }
-      }
-    }
-  }
-}
-
-onMounted(() => {
-  setInitialValues(); // Initialize values on mount
-  watch(
-    () => props.sections,
-    (newValue, oldValue) => {
-      if (newValue !== oldValue && newValue.length > 0) {
-        setInitialValues(); // Reset values if sections change
       }
     }
   )

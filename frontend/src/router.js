@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { userResource } from '@/stores/user'
 import { sessionStore } from '@/stores/session'
-import { getCustomRoutes } from './customCpq/cpqApi'
+import { getCustomRoutes } from './routerCpq/routerCpq'
 
 const routes = [
   {

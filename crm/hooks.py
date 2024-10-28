@@ -160,7 +160,11 @@ doc_events = {
 	},
 	"User": {
 		"before_validate": ["crm.api.demo.validate_user"],
-	}
+	},
+	"Item Attribute": {
+        "after_insert": ["crm.api.customDoc.sync_fcrm_item_attribute"],
+		"on_update": ["crm.api.customDoc.sync_fcrm_item_attribute"]
+    }
 }
 
 # Scheduled Tasks

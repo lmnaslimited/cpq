@@ -28,7 +28,7 @@
    "fieldname": "design_attributes",
    "fieldtype": "Table",
    "label": "Design Attributes",
-   "options": "Item Variant Attribute"
+   "options": "FCRM Item Variant Attribute"
   },
   {
    "default": "design_template.YYYY.####",
@@ -46,7 +46,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-10 11:35:37.634020",
+ "modified": "2024-10-24 10:53:33.206595",
  "modified_by": "Administrator",
  "module": "FCRM",
  "name": "Design",

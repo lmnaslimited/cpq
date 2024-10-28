@@ -47,7 +47,6 @@
     <div
       class="flex flex-col items-center gap-3 text-xl font-medium text-gray-500"
     >
-      <DealsIcon class="h-10 w-10" />
       <span>{{ __('No Designs Found') }}</span>
       <Button :label="__('Create')" @click="showDesignModal = true">
         <template #prefix><FeatherIcon name="plus" class="h-4" /></template>
@@ -64,27 +63,11 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import ViewControls from '@/components/ViewControls.vue'
 import DesignsListView from '@/components/ListViews/DesignsListView.vue'
 import DesignModal from '@/components/Modals/DesignModal.vue'
-import { usersStore } from '@/stores/users'
-import { organizationsStore } from '@/stores/organizations'
-
-import { statusesStore } from '@/stores/statuses'
-
-import {
-  dateFormat,
-  dateTooltipFormat,
-  timeAgo,
-  formatNumberIntoCurrency,
-  formatTime,
-} from '@/utils'
 import { Breadcrumbs } from 'frappe-ui'
 import { ref, computed } from 'vue'
 
 
 const breadcrumbs = [{ label: __('Designs'), route: { name: 'Designs' } }]
-const { getUser } = usersStore()
-const { getOrganization } = organizationsStore()
-const { getDealStatus } = statusesStore()
-
 const designsListView = ref(null)
 const showDesignModal = ref(false)
 

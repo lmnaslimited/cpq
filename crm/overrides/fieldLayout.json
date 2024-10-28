@@ -1,0 +1,34 @@
+[
+    {
+      "label": "Design Information",
+      "name": "design_information",
+      "opened": true,
+      "fields": [
+        "design_template",
+        "status",
+        "naming_series"
+      ]
+    },
+    {
+      "label": "Design Attributes",
+      "name": "design_attributes_tab",
+      "opened": true,
+      "fields": [
+          {
+          "name":"design_attributes",
+          "options":"FCRM Item Variant Attribute",
+          "type": "Table",
+          "link": "FCRM Item Attribute Value"
+          }
+      ]
+    },
+    {
+      "label": "Ownership",
+      "name": "ownership_tab",
+      "opened": true,
+      "fields": [
+        "design_owner"
+      ]
+    }
+  ]
+  

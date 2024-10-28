@@ -3,6 +3,7 @@
     class="flex flex-col gap-1.5 overflow-y-auto"
     :class="[isLastSection ? '' : 'max-h-[300px]']"
   >
+  <slot name="children" :fields="_fields" :data="data" :emit="emit"></slot>
     <div
       v-for="field in _fields"
       :key="field.label"

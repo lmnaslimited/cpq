@@ -42,9 +42,8 @@
   import { useRouter } from 'vue-router'
   import { call } from 'frappe-ui'
   
-  
   const { getUser } = usersStore()
-  const { getDesignStatus, statusOptions } = statusesStore()
+  const { statusOptions } = statusesStore()
   
   const show = defineModel()
   const router = useRouter()
@@ -108,6 +107,7 @@
               label: itemVariant.attribute_name,
               name: itemVariant.attribute_name.replace(/\s+/g, '_').replace(/[()]/g, '').toLowerCase(),
               type: 'Select',
+              numeric_values: 0,
               options: itemVariant.item_attribute_values.map(val => ({
                 label: val.attribute_value,
                 value: val.attribute_value
@@ -119,6 +119,7 @@
               label: itemVariant.attribute_name,
               name: itemVariant.attribute_name.replace(/\s+/g, '_').replace(/[()]/g, '').toLowerCase(),
               type: 'Range',
+              numeric_values: 1,
               min: itemVariant.from_range,
               max: itemVariant.to_range,
               step: itemVariant.increment,
@@ -186,7 +187,6 @@
     const createDesign = async () => {
     isDesignCreating.value = true;
     error.value = null;
-  
     try {
      const rangeFields = fetchedFields.value.filter(field => field.type === 'range');
       const rangeValidationResults = rangeFields.map(field => ({
@@ -216,6 +216,7 @@
             label: field.label,
             name: field.name,
             value: value,
+            numeric_values: field.numeric_values,
             type: 'data'
           }
         }

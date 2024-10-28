@@ -20,15 +20,15 @@ class CustomDesign(Design):
 				'width': '12rem',
 			},
 			{
-				'label': 'Last Modified',
-				'type': 'Datetime',
-				'key': 'modified',
+				'label': 'Design Template',
+				'type': 'Data',
+				'key': 'design_template',
 				'width': '8rem',
 			},
 		]
 		rows = [
 			"name",
 			"status",
-			"modified",
+			"design_template",
 		]
 		return {'columns': columns, 'rows': rows}

@@ -27,24 +27,25 @@ def get_sidebar_fields_with_table(doctype, name):
              if isinstance(field, dict) and field.get("type") == "Table":
                 child_doctype = field.get("options")  # Get the child doctype from options
  
-                # Query the child records where parent matches the name
+                # Query the child doctype where parent matches the name
                 child_records = frappe.get_all(child_doctype, filters={"parent": name}, fields=["*"])
               
-                # Initialize the children list if it doesn't exist
                 field["children"] = []
 
-                # Loop through each child record and extract required properties
+                # Loop through each child record
                 for record in child_records:
                    
                     # Determine field type based on numeric_values
+                    #mostly the type is "data" or "select"
                     if record.get("numeric_values") == 1:
                         field_type = "data"
                     else:
                         field_type = "select"
 
-                    # Query the linked options based on the attribute_value
+                    # In order to get option for the non numeric field
+                    # query the doctype mentioned in the link key
                     if field.get("link"):
-                        # Assuming `attribute` is a field that links to the child doctype
+            
                         attribute_value = record.get("attribute")
                         options = frappe.get_all(field.get("link"), filters={"parent": attribute_value}, fields=["attribute_value"])
                         
@@ -74,6 +75,7 @@ def get_sidebar_fields_with_table(doctype, name):
 @frappe.whitelist()
 def update_child_table(child_doctype, parent_docName, target_field, new_value):
     try:
+        # get the attribute detail from child doctype
         child_docs = frappe.get_all(child_doctype,
             filters={
                 "parent": parent_docName,
@@ -84,11 +86,15 @@ def update_child_table(child_doctype, parent_docName, target_field, new_value):
         if not child_docs:
             return {"error": _("Attribute not found for the specified parent.")}
 
-        child_doc_name = child_docs[0].name
-        child_doc = frappe.get_doc(child_doctype, child_doc_name)
+        #commented this code to replace with set_value
+        # child_doc_name = child_docs[0].name
+        # child_doc = frappe.get_doc(child_doctype, child_doc_name)
         
-        child_doc.attribute_value = new_value
-        child_doc.save() 
+        # child_doc.attribute_value = new_value
+        # child_doc.save() 
+
+        # Update the attribute_value directly
+        frappe.db.set_value(child_doctype, child_docs[0].name, "attribute_value", new_value)
 
         return {"message": _("Updated successfully")}
     except Exception as e:
@@ -98,17 +104,21 @@ def update_child_table(child_doctype, parent_docName, target_field, new_value):
 @frappe.whitelist()
 def create_item_from_design(design_name):
 
+    #get the details of the design
     design_doc = frappe.get_doc("Design", design_name)
 
     if not design_doc.design_template:
         frappe.throw("Design Template is not specified in the design document.")
 
+    #get the details of the item template
     template_item = frappe.get_doc("Item", design_doc.design_template)
 
+    #Forming a dictionary with key as variant's name and value as is_numeric
     template_attributes = {
         attr.attribute: attr.numeric_values for attr in template_item.attributes
     }
 
+    #replacing space with - for item name and code formation
     attribute_values = [
         attribute.attribute_value.replace(" ", "-")
         for attribute in design_doc.design_attributes

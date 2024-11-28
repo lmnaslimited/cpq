@@ -7,7 +7,7 @@ from pypika import Criterion
 from frappe.utils import make_filter_tuple, get_url_to_list
 from crm.api.views import get_views
 from crm.fcrm.doctype.crm_form_script.crm_form_script import get_form_script
-from crm.api.doc import get_sidebar_fields, get_fields_meta, get_assigned_users
+from crm.api.doc import get_sidebar_fields, get_fields_meta, get_assigned_users, get_field_obj
 
 
 @frappe.whitelist()
@@ -73,7 +73,7 @@ def get_sidebar_fields_with_table(doctype, name):
     return layout
 
 @frappe.whitelist()
-def update_child_table(child_doctype, parent_docName, target_field, new_value):
+def update_item_attribute(child_doctype, parent_docName, target_field, new_value):
     try:
         # get the attribute detail from child doctype
         child_docs = frappe.get_all(child_doctype,
@@ -108,7 +108,7 @@ def create_item_from_design(design_name):
     design_doc = frappe.get_doc("Design", design_name)
 
     if not design_doc.design_template:
-        frappe.throw("Design Template is not specified in the design document.")
+        frappe.throw(__('Design Template is not specified in the design document.'))
 
     #get the details of the item template
     template_item = frappe.get_doc("Item", design_doc.design_template)
@@ -176,3 +176,119 @@ def get_item(name):
     item["_form_script"] = get_form_script('Item')
     item["_assign"] = get_assigned_users("Item", item.name, item.owner)
     return item
+
+@frappe.whitelist()
+def get_quotation(name):
+    Quotation = frappe.qb.DocType("Quotation")
+    query = frappe.qb.from_(Quotation).select("*").where(Quotation.name == name).limit(1)
+    quotation = query.run(as_dict=True)
+    if not len(quotation):
+        frappe.throw(_("Quotation not found"), frappe.DoesNotExistError)
+    quotation = quotation.pop()
+    quotation["doctype"] = "Quotation"
+    quotation["fields_meta"] = get_fields_meta("Quotation")
+    quotation["_form_script"] = get_form_script('Quotation')
+    quotation["_assign"] = get_assigned_users("Quotation", quotation.name, quotation.owner)
+    return quotation
+
+@frappe.whitelist()
+def get_table_rows_columns(doctype, docname):
+    # Fetch metadata of the parent doctype
+    parent_meta = frappe.get_meta(doctype)
+    table_fields = []
+
+    # Identify fields of type "Table"
+    for field in parent_meta.fields:
+        if field.fieldtype == "Table":
+            table_fields.append({
+                "fieldname": field.fieldname,
+                "options": field.options  # Child table doctype
+            })
+
+    # Prepare the response
+    result = {
+        "columns": [],
+        "rows": {}
+    }
+
+    # Iterate through the table fields to fetch child metadata and rows
+    for table_field in table_fields:
+        child_doctype = table_field["options"]
+        child_meta = frappe.get_meta(child_doctype)
+
+        # Append child metadata to columns
+        result["columns"].append({
+            "fieldname": table_field["fieldname"],
+            "fields": [
+                {
+                    "fieldname": f.fieldname,
+                    "label": f.label,
+                    "fieldtype": f.fieldtype,
+                    "options": f.options if hasattr(f, "options") else None,
+                    "hidden": f.hidden,
+                    "read_only": f.read_only
+                }
+                for f in child_meta.fields
+            ]
+        })
+
+        # Fetch rows for the child table
+        rows = frappe.get_all(
+            child_doctype,
+            filters={"parent" : docname},
+            fields="*"
+        )
+        result["rows"][table_field["fieldname"]] = rows
+
+    return result
+
+@frappe.whitelist()
+def update_child_table_row(quotation_name, child_field, values):
+    """
+    Updates the items in a Quotation document.
+
+    :param quotation_name: The name of the Quotation to update.
+    :param child_field: The child table fieldname in the Quotation.
+    :param values: A list of dictionaries with item details to update.
+    :return: Success message or error.
+    """
+    try:
+        # Fetch the quotation document
+        quotation = frappe.get_doc("Quotation", quotation_name)
+
+        # Ensure items are passed in the correct format
+        if not isinstance(values, list):
+            frappe.throw("Items must be a list of dictionaries.")
+
+        # Get existing rows in the child table as a list
+        existing_rows = {row.name: row for row in getattr(quotation, child_field)}
+
+        # Create a set of incoming names
+        incoming_names = {value.get("name") for value in values}
+
+        # Delete rows in the child table that are not in the incoming data
+        rows_to_delete = [row for name, row in existing_rows.items() if name not in incoming_names]
+        for row in rows_to_delete:
+            row.delete()
+
+        # Add or update rows
+        for value in values:
+            existing_row = existing_rows.get(value.get("name"))
+
+            if existing_row:
+                # Update the existing row
+                for field, field_value in value.items():
+                    setattr(existing_row, field, field_value)
+            else:
+                # If it's a new row (no name exists in the document), append it
+                quotation.append(child_field, value)
+
+        # Save the updated document
+        quotation.save()
+        frappe.db.commit()
+
+        return {"status": "success", "message": "Quotation items updated successfully."}
+
+    except Exception as e:
+        frappe.log_error(message=frappe.get_traceback(), title="Update Quotation Items Error")
+        return {"status": "error", "message": str(e)}

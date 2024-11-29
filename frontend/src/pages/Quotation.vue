@@ -36,7 +36,7 @@
       </FadedScrollableDiv>
     </Tabs>
     </div>
-    <div class="border-t pt-4">
+    <div class="border-t pt-4 mt-4">
     <div class="w-[70%] p-4">
     <Table
       :rows="rows"
@@ -412,8 +412,8 @@ function updateField(name, value, callback) {
   })
 }
 
-const fetchItemRate = async (item, price_list, row) => {
-    const data = await createResource({
+const fetchItemRate = (item, price_list, row) => {
+    const data =  createResource({
       url: 'frappe.client.get_value',
       makeParams() {
         return {
@@ -437,18 +437,21 @@ const fetchItemRate = async (item, price_list, row) => {
     });
 };
 
-const handleItemCodeChange = async ({ value, fieldname, row }) => {
+const handleItemCodeChange = ({ value, fieldname, row }) => {
   if (fieldname === 'item_code') {
     const priceList = quotation.data.selling_price_list;
    
-    // Await the fetched rate
-    const priceListRate = await fetchItemRate(value, priceList, row);
+    const priceListRate = fetchItemRate(value, priceList, row);
     
   }
   else if(fieldname === 'qty'){
     
     const quantity = parseFloat(value);
     row.amount = row.rate * quantity;
+  }
+  else if(fieldname === 'rate'){
+    const rate = parseFloat(value);
+    row.amount = rate * row.qty;
   }
 };
 

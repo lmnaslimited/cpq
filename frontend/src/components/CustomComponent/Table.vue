@@ -90,18 +90,18 @@
             >
               Add Row
             </button>
-            <button
-              @click="updateRows"
-              class="border border-blue-500 text-blue-500 px-2 py-1 text-sm rounded-md ml-4"
-            >
-              Update
-            </button>
-            <button
+             <button
               v-if="selectedRows.length > 0"
               @click="deleteSelectedRows"
               class="border border-red-500 text-red-500 px-2 py-1 text-sm rounded-md ml-4"
             >
               Delete
+            </button>
+            <button
+              @click="updateRows"
+              class="border border-blue-500 text-blue-500 px-2 py-1 text-sm rounded-md ml-4"
+            >
+              Update
             </button>
           </td>
         </tr>

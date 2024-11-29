@@ -46,5 +46,7 @@ bench --site dev.localhost clear-cache
 bench use dev.localhost
 bench get-app --branch version-15 --resolve-deps erpnext
 bench get-app https://github.com/lmnaslimited/cpq.git
+bench get-app https://github.com/lmnaslimited/cpq_override.git
 bench --site dev.localhost install-app erpnext
 bench --site dev.localhost install-app crm
+bench --site dev.localhost install-app cpqextn

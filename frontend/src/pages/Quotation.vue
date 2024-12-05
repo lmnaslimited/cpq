@@ -36,7 +36,7 @@
       </FadedScrollableDiv>
     </Tabs>
     </div>
-    <div class="border-t pt-4 mt-4">
+    <div class="border-t pt-4 mt-4 flex h-full">
     <div class="w-[70%] p-4">
     <Table
       :rows="rows"
@@ -48,6 +48,31 @@
       :isTabRequired="true"
       @open-tab="openVariantTab"
     />
+    </div>
+    <div class="w-[30%] h-full">
+        <div v-if="showVariantTab" class="border border-gray-200 p-4 relative h-full">
+        <button
+          @click="showVariantTab = false"
+          class="absolute top-2 right-2 text-lg text-gray-500 hover:text-gray-800 focus:outline-none"
+        >
+          &times;
+        </button>
+        <div v-if="!variants.length && !error"><Spinner class="w-4" /></div>
+        <div v-if="variants.length > 0">
+        <Section :is-opened="opened" label="Variants">
+          <div class="p-3 space-y-2">
+            <div
+              v-for="(variant, index) in variants"
+              :key="index"
+              class="flex justify-between items-center py-1"
+            >
+              <span class="font-medium text-gray-700">{{ variant.attribute }}</span>
+              <span class="text-gray-600">{{ variant.attribute_value }}</span>
+            </div>
+         </div>
+         </Section>
+        </div>
+      </div>
     </div>
     </div>
     </div>
@@ -133,6 +158,7 @@ import {
   Breadcrumbs,
   call,
   usePageMeta,
+  Spinner,
 } from 'frappe-ui'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -190,9 +216,17 @@ const reload = ref(false)
 const showAssignmentModal = ref(false)
 const showSidePanelModal = ref(false)
 
+const showVariantTab = ref(false)
+const variants = ref([]);
+const error = ref(null);
+
 function updateQuotation(fieldname, value, callback) {
   value = Array.isArray(fieldname) ? '' : value
-
+  if (['additional_discount_percentage', 'discount_amount'].includes(fieldname) && typeof value === 'string') {
+    value = parseFloat(value);
+    // Log the conversion for debugging
+    console.log(`Converted value for ${fieldname}:`, value, "Type:", typeof value);
+  }
   if (!Array.isArray(fieldname) && validateRequired(fieldname, value)) return
 
   createResource({
@@ -206,6 +240,7 @@ function updateQuotation(fieldname, value, callback) {
     auto: true,
     onSuccess: () => {
       quotation.reload()
+      tableData.reload()
       reload.value = true
       createToast({
         title: __('Quotation updated'),
@@ -226,13 +261,13 @@ function updateQuotation(fieldname, value, callback) {
 }
 
 function updateQuotationItem(rows) {
-
   createResource({
     url: "crm.api.docCpq.update_child_table_row",
-    params: { "quotation_name": props.quotationId, "child_field": "items", "values": rows },
+    params: { "doctype": "Quotation","docname": props.quotationId, "child_field": "items", "values": rows },
     auto: true,
     onSuccess: (response) => {
       quotation.reload()
+      tableData.reload()
       reload.value = true
       createToast({
         title: __("Quotation updated"),
@@ -429,7 +464,7 @@ const fetchItemRate = (item, price_list, row) => {
       onSuccess(data) {
        
         row.rate =  data.price_list_rate || 0;
-        row.amount = row.qty * data.price_list_rate
+        row.amount = row.qty * (data.price_list_rate || 0)
       },
      onError(error) {
       console.error('Error fetching rate:', error.message);
@@ -456,9 +491,26 @@ const handleItemCodeChange = ({ value, fieldname, row }) => {
 };
 
 function openVariantTab(itemCode) {
-    console.log(itemCode)
+  if(itemCode){
+    showVariantTab.value = true;
+    const response = createResource({
+      url: 'frappe.client.get',
+      params: { doctype: "Item", name: itemCode },
+      fields: ['attributes'],
+      auto: true,
+      onSuccess(data) {
+        console.log(data.attributes)
+        variants.value = data.attributes
+      },
+      onError(error){
+        console.log(error)
+        showVariantTab.value = false;
+      }
+    });
+  }else{
+    showVariantTab.value = false;
+  }
 }
-
 async function deleteQuotation(name) {
   await call('frappe.client.delete', {
     doctype: 'Quotation',

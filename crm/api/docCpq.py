@@ -243,33 +243,32 @@ def get_table_rows_columns(doctype, docname):
     return result
 
 @frappe.whitelist()
-def update_child_table_row(quotation_name, child_field, values):
+def update_child_table_row(doctype, docname, child_field, values):
     """
-    Updates the items in a Quotation document.
-
-    :param quotation_name: The name of the Quotation to update.
+    :param doctype: The doctype to be updated
+    :param docname: The name of the document to update.
     :param child_field: The child table fieldname in the Quotation.
     :param values: A list of dictionaries with item details to update.
     :return: Success message or error.
     """
     try:
-        # Fetch the quotation document
-        quotation = frappe.get_doc("Quotation", quotation_name)
+        # Fetch the document
+        doc = frappe.get_doc(doctype, docname)
 
         # Ensure items are passed in the correct format
         if not isinstance(values, list):
             frappe.throw("Items must be a list of dictionaries.")
 
         # Get existing rows in the child table as a list
-        existing_rows = {row.name: row for row in getattr(quotation, child_field)}
+        existing_rows = {row.name: row for row in getattr(doc, child_field)}
 
         # Create a set of incoming names
         incoming_names = {value.get("name") for value in values}
 
-        # Delete rows in the child table that are not in the incoming data
-        rows_to_delete = [row for name, row in existing_rows.items() if name not in incoming_names]
-        for row in rows_to_delete:
-            row.delete()
+        # Remove rows in the child table that are not in the incoming data
+        doc.set(child_field, [
+            row for row in getattr(doc, child_field) if row.name in incoming_names
+        ])
 
         # Add or update rows
         for value in values:
@@ -281,14 +280,38 @@ def update_child_table_row(quotation_name, child_field, values):
                     setattr(existing_row, field, field_value)
             else:
                 # If it's a new row (no name exists in the document), append it
-                quotation.append(child_field, value)
-
+                doc.append(child_field, value)
+        
         # Save the updated document
-        quotation.save()
+        doc.save()
         frappe.db.commit()
+        doc.reload()
 
-        return {"status": "success", "message": "Quotation items updated successfully."}
+        return {"status": "success", "message": "updated successfully.", "doc": doc}
 
     except Exception as e:
-        frappe.log_error(message=frappe.get_traceback(), title="Update Quotation Items Error")
+        frappe.log_error(message=frappe.get_traceback(), title="Update Error")
         return {"status": "error", "message": str(e)}
+
+@frappe.whitelist()
+def get_variant_attributes(name):
+    """
+    Fetch attributes of an Item variant.
+
+    Args:
+        item_name (str): The name of the Item.
+
+    Returns:
+        list: List of attributes from the Item's attribute child table.
+    """
+    try:
+        # Fetch the Item document
+        item = frappe.get_doc("Item", name)
+        return item.attributes
+
+    except frappe.DoesNotExistError:
+        return 'DoesNotExistError'
+        # frappe.throw(_("Item with name '{0}' does not exist").format(name))
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Error in get_variant_attributes")
+        frappe.throw(_("An unexpected error occurred while fetching the item attributes."))

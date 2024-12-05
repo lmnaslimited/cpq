@@ -210,7 +210,7 @@ const onDragStart = (event, rowIndex) => {
 
 // Handle the dragging over event (allow drop)
 const onDragOver = (event) => {
-  event.preventDefault(); // Allow drop
+  event.preventDefault();
 };
 
 // Handle the drop event
@@ -218,11 +218,11 @@ const onDrop = (event, droppedRowIndex) => {
   event.preventDefault();
   const draggedIndex = draggedRowIndex.value;
 
-  if (draggedIndex === droppedRowIndex) return; // No movement if the same row
+  if (draggedIndex === droppedRowIndex) return;
 
   const draggedRow = localRows.value[draggedIndex];
-  localRows.value.splice(draggedIndex, 1); // Remove the dragged row
-  localRows.value.splice(droppedRowIndex, 0, draggedRow); // Insert the dragged row at the new position
+  localRows.value.splice(draggedIndex, 1);
+  localRows.value.splice(droppedRowIndex, 0, draggedRow);
 
   // Update idx values to reflect the new order
   updateIdxValues();
@@ -241,9 +241,6 @@ const updateRows = () => {
 }
 
 const isVariantTabNeeded = (itemCode) => {
-
-  console.log("touched item", itemCode)
-  console.log("Boolean", props.isTabRequired)
   if (props.isTabRequired) {
     emit('open-tab', itemCode);
   }

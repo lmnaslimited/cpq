@@ -50,26 +50,41 @@
     />
     </div>
     <div class="w-[30%] h-full">
-        <div v-if="showVariantTab" class="border border-gray-200 p-4 relative h-full">
+        <div v-if="showVariantTab" class="border border-gray-200 p-4 relative h-full mt-10">
         <button
           @click="showVariantTab = false"
           class="absolute top-2 right-2 text-lg text-gray-500 hover:text-gray-800 focus:outline-none"
         >
           &times;
         </button>
-        <div v-if="!variants.length && !error"><Spinner class="w-4" /></div>
+        <div v-if="!variants.length && !error"> <Spinner class="w-4" /></div>
         <div v-if="variants.length > 0">
+        <p class="pb-2 font-semibold">{{ variants[0].parent }} </p>
         <Section :is-opened="opened" label="Variants">
-          <div class="p-3 space-y-2">
+          <div class="p-3 space-y-2 border-b">
             <div
               v-for="(variant, index) in variants"
               :key="index"
               class="flex justify-between items-center py-1"
             >
-              <span class="font-medium text-gray-700">{{ variant.attribute }}</span>
-              <span class="text-gray-600">{{ variant.attribute_value }}</span>
+              <span class=" text-gray-600">{{ variant.attribute }}</span>
+              <span>{{ variant.attribute_value }}</span>
             </div>
          </div>
+         </Section>
+          <Section :is-opened="close" label="Detail">
+            <div v-for="(row, index) in rows" :key="index" class="p-3 space-y-2 border-b">
+              <template v-if="row.item_code === variants[0]?.parent">
+                 <div
+                  v-for="[key, value] in Object.entries(row).filter(([key, value]) => rowKeysToKeep.includes(key) && value != null && value !== '')"
+                  :key="key"
+                  class="flex justify-between items-center py-1"
+                >
+                <span class="text-gray-600">{{ key }}</span>
+                <span>{{ value }}</span>
+                </div>
+              </template>
+            </div>
          </Section>
         </div>
       </div>
@@ -177,6 +192,20 @@ const props = defineProps({
     required: true,
   },
 })
+
+const rowKeysToKeep = [
+  "item_group",
+  "qty",
+  "uom",
+  "conversion_factor",
+  "price_list_rate",
+  "rate",
+  "net_rate",
+  "amount",
+  "net_amount",
+  "warehouse",
+  "gross_profit"
+];
 
 const customActions = ref([])
 const customStatuses = ref([])

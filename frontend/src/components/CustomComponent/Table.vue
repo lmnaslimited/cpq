@@ -17,7 +17,7 @@
           <th
             v-for="column in filteredColumns"
             :key="column.fieldname"
-            class="py-1 w-1/4 text-sm"
+            class="py-1 w-1/5 text-sm"
           >
             {{ column.label }}
           </th>
@@ -27,6 +27,7 @@
         <tr v-for="(row, rowIndex) in localRows" 
           :key="row.idx" 
           class="border-t py-2"
+          @click="onRowClick(row)"
           :draggable="true"
           @dragstart="onDragStart($event, rowIndex)"
           @dragover="onDragOver($event)"
@@ -56,7 +57,7 @@
               :doctype="column.options"
               :filters="column.link_filters ? column.link_filters : {}"
               @change="(value) => onLinkFieldChange(value, row, column.fieldname)"
-              @click="isVariantTabNeeded(row[column.fieldname])"
+              
               :placeholder="column.fieldname"
             />
             <FormControl
@@ -243,6 +244,17 @@ const updateRows = () => {
 const isVariantTabNeeded = (itemCode) => {
   if (props.isTabRequired) {
     emit('open-tab', itemCode);
+  }
+};
+
+const onRowClick = (row) => {
+  // Find the value of the Link field for the current row
+  const linkColumn = props.filteredColumns.find(
+    (column) => column.fieldtype === 'Link' && column.read_only === 0 && column.hidden === 0
+  );
+  if (linkColumn) {
+    const linkValue = row[linkColumn.fieldname];
+    isVariantTabNeeded(linkValue);
   }
 };
 

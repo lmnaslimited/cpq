@@ -349,18 +349,30 @@ watch(
 
     if (!Number.isNaN(newCost) && !Number.isNaN(oldCost)) {
       if (newCost !== oldCost) {
-        // Only update total_cost if newCost is different from oldCost
-        console.log("Value changed:", oldCost, newCost);
-        updateField("total_cost", newCost);
+        if (newCost > 0){
+          getTotalCost()
+        } else {
+          updateField("total_cost", 0);
+        }
       } else {
-        console.log("No change in value:", oldCost, newCost);
+
       }
     } else {
-      console.log("Skipping update due to NaN value:", "newCost:", newCost, "oldCost:", oldCost);
+
     }
   },
   { immediate: false }
-)
+);
+
+const getTotalCost = () => {
+  createResource({
+    url: 'crm.api.pricingApi.get_total_cost_from_direct_material_cost',
+    params: { doc: design.data },
+    onSuccess: (data) => {
+      updateField("total_cost", data.total_cost);
+    }
+  }).fetch()
+}
 
 const fieldsLayout = createResource({
   url: 'crm.api.docCpq.get_sidebar_fields_with_table',

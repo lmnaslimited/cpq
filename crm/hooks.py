@@ -162,7 +162,11 @@ doc_events = {
 	},
 	"User": {
 		"before_validate": ["crm.api.demo.validate_user"],
-	}
+	},
+	"Item Price": {
+        "after_insert": ["crm.events.create_or_update_item_prices"],
+		"after_update": ["crm.events.create_or_update_item_prices"]
+    }
 }
 
 # Scheduled Tasks

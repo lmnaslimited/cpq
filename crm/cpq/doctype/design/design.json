@@ -27,7 +27,7 @@
    "fieldname": "design_template",
    "fieldtype": "Link",
    "label": "Design Template",
-   "link_filters": "{\"filters\": {\"has_variants\": 1}}",
+   "link_filters": "{\"has_variants\": 1}",
    "options": "Item"
   },
   {
@@ -80,7 +80,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-11-28 21:47:28.958019",
+ "modified": "2024-12-21 12:51:20.990594",
  "modified_by": "Administrator",
  "module": "CPQ",
  "name": "Design",

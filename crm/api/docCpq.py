@@ -12,89 +12,112 @@ from crm.api.doc import get_sidebar_fields, get_fields_meta, get_assigned_users,
 
 @frappe.whitelist()
 def get_sidebar_fields_with_table(doctype, name):
-    # Call the original get_sidebar_fields function to get the layout
-    layout = get_sidebar_fields(doctype, name)
+    """
+    Retrieves the sidebar fields and their corresponding child table data for a given doctype and document name.
 
-    # Fetch field metadata for the doctype
-    fields = frappe.get_meta(doctype).fields
+    This function extends the functionality of the original `get_sidebar_fields` method by enriching 
+    fields of type "Table" with additional data. For each "Table" field, child records are fetched 
+    from the corresponding child doctype, and relevant field attributes such as type, options, and values 
+    are added to the field definition.
+
+    Parameters:
+    - doctype (str): The name of the doctype for which the sidebar fields are fetched.
+    - name (str): The name of the document instance from which the sidebar fields are derived.
+
+    Returns:
+    - list: A list of dictionaries representing the sections and their fields, with child table data 
+            included for fields of type "Table". Each field will include an additional "children" key, 
+            which contains the relevant child records for that table.
+    """
+    # Call the original get_sidebar_fields function to get the layout
+    la_layout = get_sidebar_fields(doctype, name)
 
     # Loop through each section in the layout
-    for section in layout:
+    for ld_section in la_layout:
         # Iterate over fields in the section
-        for field in section.get("fields", []):
+        for ld_field in ld_section.get("fields", []):
             
             # If the field type is Table
-             if isinstance(field, dict) and field.get("type") == "Table":
-                child_doctype = field.get("options")  # Get the child doctype from options
+             if isinstance(ld_field, dict) and ld_field.get("type") == "Table":
+                l_child_doctype = ld_field.get("options")  # Get the child doctype from options
  
                 # Query the child doctype where parent matches the name
-                child_records = frappe.get_all(child_doctype, filters={"parent": name}, fields=["*"])
+                la_child_records = frappe.get_all(l_child_doctype, filters={"parent": name}, fields=["*"])
               
-                field["children"] = []
+                ld_field["children"] = []
 
                 # Loop through each child record
-                for record in child_records:
+                for ld_record in la_child_records:
                    
                     # Determine field type based on numeric_values
                     #mostly the type is "data" or "select"
-                    if record.get("numeric_values") == 1:
-                        field_type = "data"
+                    if ld_record.get("numeric_values") == 1:
+                        l_field_type = "data"
                     else:
-                        field_type = "select"
+                        l_field_type = "select"
 
                     # In order to get option for the non numeric field
                     # query the doctype mentioned in the link key
-                    if field.get("link"):
+                    if ld_field.get("link"):
             
-                        attribute_value = record.get("attribute")
-                        options = frappe.get_all(field.get("link"), filters={"parent": attribute_value}, fields=["attribute_value"])
+                        l_attribute_value = ld_record.get("attribute")
+                        la_options = frappe.get_all(ld_field.get("link"), filters={"parent": l_attribute_value}, fields=["attribute_value"])
                         
                         # Extracting the attribute_value into an array
-                        options = [opt.get("attribute_value") for opt in options]
+                        la_options = [ld_option.get("attribute_value") for ld_option in la_options]
 
                     else:
-                        options = None
+                        la_options = None
 
                     # Push properties into children maintaining structure for front-end
-                    field["children"].append({
-                        "label": record.get("attribute", ''),
-                        "type": field_type,
+                    ld_field["children"].append({
+                        "label": ld_record.get("attribute", ''),
+                        "type": l_field_type,
                         "name": "attribute_value",
-                        "value": record.get("attribute_value", ''),
-                        "hidden": field.get("hidden", False),
-                        "reqd": field.get("reqd", False),
-                        "read_only": field.get("read_only", False),
-                        "placeholder": field.get("placeholder", ''),
-                        "options": options, # Add options as an array
-                        "doctype": field.get("options"),
-                        "parent": record.get("parent")
+                        "value": ld_record.get("attribute_value", ''),
+                        "hidden": ld_field.get("hidden", False),
+                        "reqd": ld_field.get("reqd", False),
+                        "read_only": ld_field.get("read_only", False),
+                        "placeholder": ld_field.get("placeholder", ''),
+                        "options": la_options,
+                        "doctype": ld_field.get("options"),
+                        "parent": ld_record.get("parent")
                     })
 
-    return layout
+    return la_layout
 
 @frappe.whitelist()
 def update_item_attribute(child_doctype, parent_docName, target_field, new_value):
+    """
+    Updates the 'attribute_value' field for a specific attribute in a child doctype linked to a parent document.
+
+    This function searches for a child record in the specified 'child_doctype' where the 'parent' matches the 
+    provided 'parent_docname' and the 'attribute' matches the 'target_field'. If such a record is found, it updates 
+    the 'attribute_value' to the new value specified. 
+
+    Parameters:
+    - child_doctype (str): The name of the child doctype to search for.
+    - parent_docname (str): The name of the parent document to look for in the child records.
+    - target_field (str): The name of the field in the child record that identifies the attribute to be updated.
+    - new_value (str): The new value to set for the 'attribute_value' field.
+
+    Returns:
+    - dict: A dictionary with a success message if the update was successful, or an error message if it failed.
+    """
     try:
         # get the attribute detail from child doctype
-        child_docs = frappe.get_all(child_doctype,
+        la_child_docs = frappe.get_all(child_doctype,
             filters={
                 "parent": parent_docName,
                 "attribute": target_field
             },
             limit=1 
         )
-        if not child_docs:
+        if not la_child_docs:
             return {"error": _("Attribute not found for the specified parent.")}
 
-        #commented this code to replace with set_value
-        # child_doc_name = child_docs[0].name
-        # child_doc = frappe.get_doc(child_doctype, child_doc_name)
-        
-        # child_doc.attribute_value = new_value
-        # child_doc.save() 
-
         # Update the attribute_value directly
-        frappe.db.set_value(child_doctype, child_docs[0].name, "attribute_value", new_value)
+        frappe.db.set_value(child_doctype, la_child_docs[0].name, "attribute_value", new_value)
 
         return {"message": _("Updated successfully")}
     except Exception as e:
@@ -103,59 +126,73 @@ def update_item_attribute(child_doctype, parent_docName, target_field, new_value
 
 @frappe.whitelist()
 def create_item_from_design(design_name):
+    """
+    Creates a new item variant based on the details from the specified design document. 
+    This function uses the design template to fetch the item template and associated attributes, 
+    creates a new item variant, and updates it with the relevant attributes from the design document. 
+    It also creates a standard selling price for the new item based on the design's total cost.
+
+    Parameters:
+    - design_name (str): The name of the design document to fetch the item details from.
+
+    Returns:
+    - str: The item code of the newly created item variant.
+    
+    Raises:
+    - frappe.exceptions.ValidationError: If the design template is not specified in the design document.
+    """
 
     #get the details of the design
-    design_doc = frappe.get_doc("Design", design_name)
+    ld_design_doc = frappe.get_doc("Design", design_name)
 
-    if not design_doc.design_template:
+    if not ld_design_doc.design_template:
         frappe.throw(__('Design Template is not specified in the design document.'))
 
     #get the details of the item template
-    template_item = frappe.get_doc("Item", design_doc.design_template)
+    ld_template_item = frappe.get_doc("Item", ld_design_doc.design_template)
 
     #Forming a dictionary with key as variant's name and value as is_numeric
-    template_attributes = {
-        attr.attribute: attr.numeric_values for attr in template_item.attributes
+    ld_template_attributes = {
+        attr.attribute: attr.numeric_values for attr in ld_template_item.attributes
     }
 
     #replacing space with - for item name and code formation
-    attribute_values = [
+    la_attribute_values = [
         attribute.attribute_value.replace(" ", "-")
-        for attribute in design_doc.design_attributes
-        if attribute.attribute in template_attributes
+        for attribute in ld_design_doc.design_attributes
+        if attribute.attribute in ld_template_attributes
     ]
-    item_code = f"{design_doc.design_template}-" + "-".join(attribute_values)
+    l_item_code = f"{ld_design_doc.design_template}-" + "-".join(la_attribute_values)
 
-    item_variant = frappe.new_doc("Item")
-    item_variant.item_code = item_code
-    item_variant.item_name = item_code
-    item_variant.item_group = template_item.item_group
-    item_variant.is_stock_item = template_item.is_stock_item
-    item_variant.variant_of = design_doc.design_template
-    item_variant.include_item_in_manufacturing = 0
+    ld_item_variant = frappe.new_doc("Item")
+    ld_item_variant.item_code = l_item_code
+    ld_item_variant.item_name = l_item_code
+    ld_item_variant.item_group = ld_template_item.item_group
+    ld_item_variant.is_stock_item = ld_template_item.is_stock_item
+    ld_item_variant.variant_of = ld_design_doc.design_template
+    ld_item_variant.include_item_in_manufacturing = 0
 
-    for attribute in design_doc.design_attributes:
-        if attribute.attribute in template_attributes:
+    for ld_attribute in ld_design_doc.design_attributes:
+        if ld_attribute.attribute in ld_template_attributes:
 
-            numeric_value = template_attributes[attribute.attribute]
+            l_numeric_value = ld_template_attributes[ld_attribute.attribute]
             
-            item_variant.append("attributes", {
-                "attribute": attribute.attribute,
-                "attribute_value": attribute.attribute_value,
-                "numeric_values": numeric_value
+            ld_item_variant.append("attributes", {
+                "attribute": ld_attribute.attribute,
+                "attribute_value": ld_attribute.attribute_value,
+                "numeric_values": l_numeric_value
             })
 
-    item_variant.insert()
+    ld_item_variant.insert()
     frappe.db.commit()
 
     # Create a "Standard Selling" price list for this item
-    item_price = frappe.new_doc("Item Price")
-    item_price.item_code = item_variant.item_code
-    item_price.price_list = "Standard Selling"
-    item_price.price_list_rate = design_doc.total_cost
-    item_price.insert()
-    frappe.db.commit()
-    return item_variant.item_code
+    ld_item_price = frappe.new_doc("Item Price")
+    ld_item_price.item_code = ld_item_variant.item_code
+    ld_item_price.price_list = "Standard Selling"
+    ld_item_price.price_list_rate = ld_design_doc.total_cost
+    ld_item_price.insert()
+    return ld_item_variant.item_code
 
 @frappe.whitelist()
 def get_navigate_url(doctype, name):
@@ -193,101 +230,133 @@ def get_quotation(name):
 
 @frappe.whitelist()
 def get_table_rows_columns(doctype, docname):
+    """
+    Fetches the metadata and rows for all table fields in a specified parent document.
+    The function identifies fields of type "Table" in the parent doctype, retrieves their metadata 
+    from the child doctype, and returns both the metadata (column structure) and the rows (data) 
+    from the child tables linked to the parent document.
+
+    Parameters:
+    - doctype (str): The name of the parent doctype (e.g., 'Sales Order').
+    - docname (str): The name of the specific parent document (e.g., 'SO-0001').
+
+    Returns:
+    - dict: A dictionary containing:
+        - 'columns': A list of metadata for fields in child doctypes (columns). 
+          Each entry includes fieldname, label, fieldtype, options, etc.
+        - 'rows': A dictionary where each key is the fieldname of a table field, and 
+          the corresponding value is a list of child records (rows) for that table.
+    """
     # Fetch metadata of the parent doctype
-    parent_meta = frappe.get_meta(doctype)
-    table_fields = []
+    ld_parent_meta = frappe.get_meta(doctype)
+    la_table_fields = []
 
     # Identify fields of type "Table"
-    for field in parent_meta.fields:
-        if field.fieldtype == "Table":
-            table_fields.append({
-                "fieldname": field.fieldname,
-                "options": field.options  # Child table doctype
+    for ld_field in ld_parent_meta.fields:
+        if ld_field.fieldtype == "Table":
+            la_table_fields.append({
+                "fieldname": ld_field.fieldname,
+                "options": ld_field.options  # Child table doctype
             })
 
     # Prepare the response
-    result = {
+    ld_result = {
         "columns": [],
         "rows": {}
     }
 
     # Iterate through the table fields to fetch child metadata and rows
-    for table_field in table_fields:
-        child_doctype = table_field["options"]
-        child_meta = frappe.get_meta(child_doctype)
+    for ld_table_field in la_table_fields:
+        l_child_doctype = ld_table_field["options"]
+        ld_child_meta = frappe.get_meta(l_child_doctype)
 
         # Append child metadata to columns
-        result["columns"].append({
-            "fieldname": table_field["fieldname"],
+        ld_result["columns"].append({
+            "fieldname": ld_table_field["fieldname"],
             "fields": [
                 {
-                    "fieldname": f.fieldname,
-                    "label": f.label,
-                    "fieldtype": f.fieldtype,
-                    "options": f.options if hasattr(f, "options") else None,
-                    "hidden": f.hidden,
-                    "read_only": f.read_only
+                    "fieldname": field.fieldname,
+                    "label": field.label,
+                    "fieldtype": field.fieldtype,
+                    "options": field.options if hasattr(field, "options") else None,
+                    "hidden": field.hidden,
+                    "read_only": field.read_only
                 }
-                for f in child_meta.fields
+                for field in ld_child_meta.fields
             ]
         })
 
         # Fetch rows for the child table
-        rows = frappe.get_all(
-            child_doctype,
+        la_rows = frappe.get_all(
+            l_child_doctype,
             filters={"parent" : docname},
             fields="*"
         )
-        result["rows"][table_field["fieldname"]] = rows
+        ld_result["rows"][ld_table_field["fieldname"]] = la_rows
 
-    return result
+    return ld_result
 
 @frappe.whitelist()
 def update_child_table_row(doctype, docname, child_field, values):
     """
-    :param doctype: The doctype to be updated
-    :param docname: The name of the document to update.
-    :param child_field: The child table fieldname in the Quotation.
-    :param values: A list of dictionaries with item details to update.
-    :return: Success message or error.
+    Updates or adds rows in a child table field of a specified document.
+
+    This function updates the child table records based on a list of dictionaries provided in `values`.
+    If the row exists, it is updated with the new values. If the row does not exist, a new row is added.
+    Additionally, rows not included in the incoming data will be removed.
+
+    Parameters:
+    - doctype (str): The name of the parent document (e.g., 'Quotation').
+    - docname (str): The name of the specific document to update (e.g., 'QTN-0001').
+    - child_field (str): The name of the child table field in the parent document (e.g., 'items').
+    - values (list of dict): A list of dictionaries where each dictionary represents a row to update or add. Each dictionary should contain the row's field values, including the unique 'name' field if updating existing rows.
+
+    Returns:
+    - dict: A dictionary containing the status of the operation and a message.
+      Example: 
+      {
+          "status": "success", 
+          "message": "Updated successfully.", 
+          "doc": <updated document object>
+      }
     """
     try:
         # Fetch the document
-        doc = frappe.get_doc(doctype, docname)
+        ld_doc = frappe.get_doc(doctype, docname)
 
         # Ensure items are passed in the correct format
         if not isinstance(values, list):
             frappe.throw("Items must be a list of dictionaries.")
 
         # Get existing rows in the child table as a list
-        existing_rows = {row.name: row for row in getattr(doc, child_field)}
+        ld_existing_rows = {row.name: row for row in getattr(ld_doc, child_field)}
 
         # Create a set of incoming names
-        incoming_names = {value.get("name") for value in values}
+        la_incoming_names = {value.get("name") for value in values}
 
         # Remove rows in the child table that are not in the incoming data
-        doc.set(child_field, [
-            row for row in getattr(doc, child_field) if row.name in incoming_names
+        ld_doc.set(child_field, [
+            row for row in getattr(ld_doc, child_field) if row.name in la_incoming_names
         ])
 
         # Add or update rows
-        for value in values:
-            existing_row = existing_rows.get(value.get("name"))
+        for ld_value in values:
+            l_existing_row = ld_existing_rows.get(ld_value.get("name"))
 
-            if existing_row:
+            if l_existing_row:
                 # Update the existing row
-                for field, field_value in value.items():
-                    setattr(existing_row, field, field_value)
+                for field, field_value in ld_value.items():
+                    setattr(l_existing_row, field, field_value)
             else:
                 # If it's a new row (no name exists in the document), append it
-                doc.append(child_field, value)
+                ld_doc.append(child_field, ld_value)
         
         # Save the updated document
-        doc.save()
+        ld_doc.save()
         frappe.db.commit()
-        doc.reload()
+        ld_doc.reload()
 
-        return {"status": "success", "message": "updated successfully.", "doc": doc}
+        return {"status": "success", "message": "updated successfully.", "doc": ld_doc}
 
     except Exception as e:
         frappe.log_error(message=frappe.get_traceback(), title="Update Error")

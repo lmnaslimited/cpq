@@ -3,8 +3,7 @@ from frappe import _
 
 @frappe.whitelist()
 def get_total_cost_from_direct_material_cost(doc):
-    try:
-        # Ensure `doc` is a dictionary
+    try:        
         if not isinstance(doc, dict):
             frappe.throw(_("Invalid input: Expected a dictionary."), frappe.ValidationError)
 
@@ -42,7 +41,7 @@ def get_total_cost_from_direct_material_cost(doc):
 
     except frappe.ValidationError as e:
         # Handle known validation errors with specific messages
-        return {"error": str(e)}  # Frappe throws specific error message
+        return {"error": str(e)}
 
     except Exception as e:
         # Log unexpected errors for further troubleshooting
@@ -61,19 +60,16 @@ def get_selling_price_from_total_cost(doc):
         ld_margin = {
             "l_ebita": 40,  # EBITA as a percentage
             "l_transport": 10,
-            "l_comission": 10,
+            "l_comission": 10, # comission as a percentage
         }
 
-        # Calculate EBITA as a percentage of the total cost
-        l_ebita = (ld_margin["l_ebita"] / 100) * l_total_cost
-
-        # Calculate the final cost (Selling price = Total Cost + EBITA + Transport + Commission)
-        l_selling = l_total_cost + l_ebita + ld_margin["l_transport"] + ld_margin["l_comission"]
+        # Calculation for the final cost
+        l_selling = l_total_cost + ld_margin["l_transport"] / (1 - (ld_margin["l_ebita"] + ld_margin["l_comission"]) / 100 )
 
         # Return the final cost along with marginal costs
         return {
             "selling": l_selling,
-            **ld_margin  # Merge marginal costs into the response
+            **ld_margin
         }
 
     except frappe.ValidationError as e:

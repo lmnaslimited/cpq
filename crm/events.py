@@ -40,7 +40,7 @@ def create_or_update_item_prices(doc, event):
     Returns:
         None
     """
-    
+
     # Only proceed if the price list is "Standard Selling"
     if doc.price_list == 'Standard Selling':
         # Fetch all price lists except "Standard Selling"
@@ -54,7 +54,7 @@ def create_or_update_item_prices(doc, event):
         for ld_price_list in ld_price_lists:
             if ld_price_list.selling == 1:
                 
-                selling_price = frappe.call('crm.api.pricingApi.get_selling_price_from_total_cost', doc = {"total_cost": doc.price_list_rate})
+                selling_price = frappe.call('crm.api.pricingApi.get_selling_price_from_total_cost', i_total_cost =  doc.price_list_rate)
                 
                 # Fetch the existing item price for the current price list
                 l_item_price_doc = fn_get_item_price_document(doc.item_code, ld_price_list.name)

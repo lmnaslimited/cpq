@@ -367,7 +367,7 @@ watch(
 const getTotalCost = () => {
   createResource({
     url: 'crm.api.pricingApi.get_total_cost_from_direct_material_cost',
-    params: { doc: design.data },
+    params: {  i_direct_material_cost: design.data.direct_material_cost },
     onSuccess: (data) => {
       updateField("total_cost", data.total_cost);
     }

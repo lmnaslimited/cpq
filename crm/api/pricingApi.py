@@ -2,12 +2,12 @@ import frappe
 from frappe import _
 
 @frappe.whitelist()
-def get_total_cost_from_direct_material_cost(doc):
+def get_total_cost_from_direct_material_cost(i_direct_material_cost):
     """
     API to calculate the total cost based on direct material cost and fixed margin rates.
 
     Args:
-        doc (dict): A dictionary containing the key 'direct_material_cost'.
+        i_direct_material_cost (str): A string containing'direct_material_cost'.
 
     Returns:
         dict: A dictionary with the total cost and individual margin rates.
@@ -24,16 +24,9 @@ def get_total_cost_from_direct_material_cost(doc):
     """
 
     try:        
-        l_direct_material_cost = doc.get('direct_material_cost')
-
-        if l_direct_material_cost is None:
-            frappe.throw(_("Value doesn't exist:'direct_material_cost' not found."), frappe.ValidationError)
-
-        try:
-            l_direct_material_cost = float(l_direct_material_cost)
-        except ValueError:
-            frappe.throw(_("Invalid value for 'direct_material_cost': Expected a number."), frappe.ValidationError)
-
+        
+        l_direct_material_cost = float(i_direct_material_cost)
+        
         # Marginal Costs
         ld_margin = { 
             "l_labour_rate": 10,
@@ -54,8 +47,10 @@ def get_total_cost_from_direct_material_cost(doc):
             **ld_margin
         }
 
-    except frappe.ValidationError as e:
-        return {"error": str(e)}
+    except ValueError:
+        # Handle the case where the input can't be converted to float
+        frappe.throw(_("Invalid value for 'direct_material_cost': Expected a valid numeric value."), frappe.ValidationError)
+
 
     except Exception as e:
         frappe.log_error(message=str(e), title="Unexpected Error in get_total_cost_from_direct_material_cost")
@@ -63,12 +58,12 @@ def get_total_cost_from_direct_material_cost(doc):
 
 
 @frappe.whitelist()
-def get_selling_price_from_total_cost(doc):
+def get_selling_price_from_total_cost(i_total_cost):
     """
     API to calculate the selling price based on the total cost and fixed margin rates.
 
     Args:
-        doc (dict): A dictionary containing the key 'total_cost'.
+        i_total_cost (float): A float containing 'total_cost'.
 
     Returns:
         dict: A dictionary with the calculated selling price and margin details.
@@ -82,11 +77,7 @@ def get_selling_price_from_total_cost(doc):
     """
 
     try:
-        l_total_cost = doc.get('total_cost')
-
-        if l_total_cost is None:
-            frappe.throw(_("Value doesn't exist:'total_cost' not found."), frappe.ValidationError)
-
+       
         # Define marginal costs
         ld_margin = {
             "l_ebita": 40,  # EBITA as a percentage
@@ -95,15 +86,12 @@ def get_selling_price_from_total_cost(doc):
         }
 
         # Calculation for the final cost
-        l_selling = (l_total_cost + ld_margin["l_transport"]) / (1 - (ld_margin["l_ebita"] + ld_margin["l_comission"]) / 100 )
+        l_selling = (i_total_cost + ld_margin["l_transport"]) / (1 - (ld_margin["l_ebita"] + ld_margin["l_comission"]) / 100 )
 
         return {
             "selling": l_selling,
             **ld_margin
         }
-
-    except frappe.ValidationError as e:
-        return {"error": str(e)}
 
     except Exception as e:
         frappe.log_error(message=str(e), title="Unexpected Error in get_selling_price_from_total_cost")

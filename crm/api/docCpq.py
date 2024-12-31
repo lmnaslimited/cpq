@@ -42,7 +42,7 @@ def get_sidebar_fields_with_table(doctype, name):
                 l_child_doctype = ld_field.get("options")  # Get the child doctype from options
  
                 # Query the child doctype where parent matches the name
-                la_child_records = frappe.get_all(l_child_doctype, filters={"parent": name}, fields=["*"])
+                la_child_records = frappe.get_all(l_child_doctype, filters={"parent": name}, fields=["*"], order_by="idx ASC")
               
                 ld_field["children"] = []
 
@@ -380,7 +380,22 @@ def get_variant_attributes(name):
 
     except frappe.DoesNotExistError:
         return 'DoesNotExistError'
-        # frappe.throw(_("Item with name '{0}' does not exist").format(name))
+        frappe.throw(_("Item with name '{0}' does not exist").format(name))
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error in get_variant_attributes")
         frappe.throw(_("An unexpected error occurred while fetching the item attributes."))
+
+@frappe.whitelist()
+def get_item_attribute_record():
+    la_attributes = frappe.get_all("Item Attribute", fields=["*"], filters={"custom_is_group": 0})
+    for ld_attribute in la_attributes:
+        
+        ld_attribute["item_attribute_values"] = [
+            la_value["attribute_value"] for la_value in frappe.get_all(
+                "Item Attribute Value",
+                filters={"parent": ld_attribute["name"]},
+                fields=["attribute_value"]
+            )
+        ]
+    return la_attributes
+

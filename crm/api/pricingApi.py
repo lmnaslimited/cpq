@@ -86,7 +86,7 @@ def get_selling_price_from_total_cost(i_total_cost):
         }
 
         # Calculation for the final cost
-        l_selling = (i_total_cost + ld_margin["l_transport"]) / (1 - (ld_margin["l_ebita"] + ld_margin["l_comission"]) / 100 )
+        l_selling = (i_total_cost + ((ld_margin["l_transport"] / 100 ) * i_total_cost)) / (1 - (ld_margin["l_ebita"] + ld_margin["l_comission"]) / 100 )
 
         return {
             "selling": l_selling,

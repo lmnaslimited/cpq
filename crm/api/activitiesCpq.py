@@ -2,6 +2,7 @@ import frappe
 from frappe import _
 from frappe.utils.caching import redis_cache
 from frappe.desk.form.load import get_docinfo
+import json
 
 # Import the original get_activities function
 from crm.api.activities import (

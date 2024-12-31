@@ -8,7 +8,13 @@
         v-if="itemsListView?.customListActions"
         :actions="itemsListView.customListActions"
       />
-      
+      <Button
+        variant="solid"
+        :label="__('Create')"
+        @click="showItemModal = true"
+      >
+        <template #prefix><FeatherIcon name="plus" class="h-4" /></template>
+      </Button>
     </template>
   </LayoutHeader>
   <ViewControls
@@ -42,10 +48,12 @@
       class="flex flex-col items-center gap-3 text-xl font-medium text-gray-500"
     >
       <span>{{ __('No Item Found') }}</span>
-      
+      <Button :label="__('Create')" @click="showItemModal = true">
+        <template #prefix><FeatherIcon name="plus" class="h-4" /></template>
+      </Button>
     </div>
   </div>
- 
+  <ItemModal v-model="showItemModal" />
 </template>
 
 <script setup>
@@ -54,12 +62,14 @@ import CustomActions from '@/components/CustomActions.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import ViewControls from '@/components/ViewControls.vue'
 import ItemsListView from '@/components/ListViews/ItemsListView.vue'
+import ItemModal from '@/components/Modals/ItemModal.vue'
 import { Breadcrumbs } from 'frappe-ui'
 import { ref, computed } from 'vue'
 
 
 const breadcrumbs = [{ label: __('Items'), route: { name: 'Items' } }]
 const itemsListView = ref(null)
+const showItemModal = ref(false)
 
 // items data is loaded in the ViewControls component
 const items = ref({})

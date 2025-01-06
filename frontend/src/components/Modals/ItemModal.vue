@@ -241,10 +241,13 @@ watch(
         if (selectedAttributeData) {
           // Reset selected attribute after use
           selectedAttribute.value = '';
-
           selectedAttributes.value.push(selectedAttributeData);
           item.attributes.push({
-            attribute: selectedAttributeData.name,
+            attribute: selectedAttributeData.attribute_name,
+            from_range: selectedAttributeData.from_range,
+            to_range: selectedAttributeData.to_range,
+            increment: selectedAttributeData.increment,
+            numeric_values: selectedAttributeData.numeric_values
           });
         } else {
           console.log('Attribute not found');

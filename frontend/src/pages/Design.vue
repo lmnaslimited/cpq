@@ -375,7 +375,7 @@ const getTotalCost = () => {
 }
 
 const fieldsLayout = createResource({
-  url: 'crm.api.docCpq.get_sidebar_fields_with_table',
+  url: 'crm.api.docCpq.fn_get_sidebar_fields_with_table',
   cache: ['fieldsLayout', props.designId],
   params: { doctype: 'Design', name: props.designId },
   auto: true,
@@ -384,7 +384,7 @@ const fieldsLayout = createResource({
 const createItem = () => {
   isItemCreating.value = true;
   createResource({
-    url: 'crm.api.docCpq.create_item_from_design',
+    url: 'crm.api.docCpq.fn_create_item_from_design',
     params: { design_name: props.designId },
     onSuccess: (data) => {
       isItemCreating.value = false;

@@ -291,7 +291,7 @@ function updateQuotation(fieldname, value, callback) {
 
 function updateQuotationItem(rows) {
   createResource({
-    url: "crm.api.docCpq.update_child_table_row",
+    url: "crm.api.docCpq.fn_update_child_table_row",
     params: { "doctype": "Quotation","docname": props.quotationId, "child_field": "items", "values": rows },
     auto: true,
     onSuccess: (response) => {
@@ -432,7 +432,7 @@ const fieldsLayout = createResource({
 
 //function to get table fields rows and columns
 const tableData = createResource({
-  url: 'crm.api.docCpq.get_table_rows_columns',
+  url: 'crm.api.docCpq.fn_get_table_rows_columns',
   cache: ['tableData', props.quotationId],
   params: { doctype: 'Quotation', docname: props.quotationId },
   auto: true,

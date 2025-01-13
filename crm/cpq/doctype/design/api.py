@@ -19,61 +19,102 @@ def get_design(name):
     return design
 
 @frappe.whitelist()
-def get_item_variant():
-  item_variant = frappe.get_list("Item", filters={"has_variants": 1})
-  item_names = [item['name'] for item in item_variant]
-  return item_names
+def fn_get_item_variant():
+    '''
+    This api return item template name in an array
+    '''
+    la_item_variant = frappe.get_list("Item", filters={"has_variants": 1})
+    la_item_names = [ld_item['name'] for ld_item in la_item_variant]
+    return la_item_names
+
 
 @frappe.whitelist()
-def get_formatted_item_details(item_name):
+def fn_get_formatted_item_details(item_name):
+    """
+    Fetches and formats the attributes for a given item.
+
+    This API retrieves attributes associated with an item and returns them as a structured list. 
+    Each attribute is represented as a field configuration, specifying whether it is a range-based 
+    field or a select-type field. The configuration includes default values, options, and range specifications where applicable.
+
+    Parameters:
+        item_name (str): The name of the item for which attributes need to be fetched.
+
+    Returns:
+        list[dict]: A list of dictionaries representing attribute field configurations. 
+        Each dictionary includes:
+            - `label`, `name` ,`type` ,`numeric_values` ,`min` ,`max` ,`step` ,`default` ,`options` 
+
+    Raises:
+        DoesNotExistError: If the specified item does not exist.
+        Exception: If any other error occurs, the error is logged and a user-friendly message is thrown.
+    """
     try:
         # Fetch the item document to get the list of attributes
-        item = frappe.get_doc("Item", item_name)
-        attribute_names = [attr.attribute for attr in item.attributes]
+        ld_item = frappe.get_doc("Item", item_name)
+        # Prepare a list of attributes and their default values
+        la_attribute_names = []
+        ld_attribute_defaults = {}  # Dictionary to hold custom default values for each attribute
+
+        for ld_attribute in ld_item.attributes:
+            la_attribute_names.append(ld_attribute.attribute)
+            ld_attribute_defaults[ld_attribute.attribute] = ld_attribute.attribute_value  # Store default value for each attribute
         
-        sql = f"""
+        
+        l_sql = f"""
         SELECT `name`, `attribute_name`, `numeric_values`, `from_range`, `to_range`, `increment`
         FROM `tabItem Attribute`
-        WHERE `name` IN ({','.join(['%s']*len(attribute_names))})
-        ORDER BY FIELD(`name`, {','.join(['%s']*len(attribute_names))})
+        WHERE `name` IN ({','.join(['%s']*len(la_attribute_names))})
+        ORDER BY FIELD(`name`, {','.join(['%s']*len(la_attribute_names))})
         """
 
-        attributes = frappe.db.sql(sql, tuple(attribute_names + attribute_names), as_dict=True)
+        la_attributes = frappe.db.sql(l_sql, tuple(la_attribute_names + la_attribute_names), as_dict=True)
 
         # Prepare list to store fields
-        fields = []
+        la_fields = []
         
         # Loop over attributes and fetch options if needed
-        for attribute in attributes:
-            if attribute.numeric_values:
+        for ld_attribute in la_attributes:
+            # Get the custom default value for the current attribute
+            l_default_value = ld_attribute_defaults.get(ld_attribute.attribute_name, None)
+
+            if ld_attribute.numeric_values:
                 # Range type field setup
-                field = {
-                    "label": attribute.attribute_name,
-                    "name": attribute.attribute_name.replace(" ", "_").lower(),
+                ld_field = {
+                    "label": ld_attribute.attribute_name,
+                    "name": ld_attribute.attribute_name.replace(" ", "_").lower(),
                     "type": "Range",
                     "numeric_values": 1,
-                    "min": attribute.from_range,
-                    "max": attribute.to_range,
-                    "step": attribute.increment
+                    "min": ld_attribute.from_range,
+                    "max": ld_attribute.to_range,
+                    "step": ld_attribute.increment,
+                    "from_range": ld_attribute.from_range,
+                    "to_range": ld_attribute.to_range,
+                    "increment": ld_attribute.increment,
+                    "default": l_default_value
                 }
             else:
                 # Select type field setup with options
-                options = frappe.get_all("Item Attribute Value",
-                                         filters={"parent": attribute.name},
+                la_options = frappe.get_all("Item Attribute Value",
+                                         filters={"parent": ld_attribute.name},
                                          fields=["attribute_value"],
                                          order_by="idx ASC")
                 
-                field = {
-                    "label": attribute.attribute_name,
-                    "name": attribute.attribute_name.replace(" ", "_").lower(),
+                ld_field = {
+                    "label": ld_attribute.attribute_name,
+                    "name": ld_attribute.attribute_name.replace(" ", "_").lower(),
                     "type": "Select",
                     "numeric_values": 0,
-                    "options": [{"label": val.attribute_value, "value": val.attribute_value} for val in options]
+                    "default": l_default_value,
+                    "from_range": ld_attribute.from_range,
+                    "to_range": ld_attribute.to_range,
+                    "increment": ld_attribute.increment,
+                    "options": [{"label": ld_option.attribute_value, "value": ld_option.attribute_value} for ld_option in la_options]
                 }
             
-            fields.append(field)
+            la_fields.append(ld_field)
         
-        return fields
+        return la_fields
 
     except frappe.DoesNotExistError:
         frappe.throw(_("Item not found"))

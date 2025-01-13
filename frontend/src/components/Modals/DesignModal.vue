@@ -79,7 +79,7 @@
   
   async function fetchDesignTemplates() {
     try {
-      const message = await call('crm.cpq.doctype.design.api.get_item_variant')
+      const message = await call('crm.cpq.doctype.design.api.fn_get_item_variant')
       designTemplateOptions.value = message
     } catch (error) {
       console.error('Error fetching transformer types:', error)
@@ -87,7 +87,7 @@
   }
   async function fnFetchItemDetails(itemName) {
     try {
-      const fields = await call('crm.cpq.doctype.design.api.get_formatted_item_details', {
+      const fields = await call('crm.cpq.doctype.design.api.fn_get_formatted_item_details', {
         item_name: itemName
       })
       fetchedFields.value = fields;
@@ -115,6 +115,9 @@
             attribute: field.label,
             attribute_value: value,
             numeric_values: field.numeric_values,
+            from_range: field.from_range,
+            to_range: field.to_range,
+            increment: field.increment
           });  // Add to child table
       }
     });

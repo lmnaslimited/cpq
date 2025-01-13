@@ -11,7 +11,7 @@ from crm.api.doc import get_sidebar_fields, get_fields_meta, get_assigned_users,
 
 
 @frappe.whitelist()
-def get_sidebar_fields_with_table(doctype, name):
+def fn_get_sidebar_fields_with_table(doctype, name):
     """
     Retrieves the sidebar fields and their corresponding child table data for a given doctype and document name.
 
@@ -74,58 +74,66 @@ def get_sidebar_fields_with_table(doctype, name):
                         "label": ld_record.get("attribute", ''),
                         "type": l_field_type,
                         "name": "attribute_value",
+                        "from_range": ld_record.get("from_range"),
+                        "to_range": ld_record.get("to_range"),
+                        "increment": ld_record.get("increment"),
                         "value": ld_record.get("attribute_value", ''),
-                        "hidden": ld_field.get("hidden", False),
-                        "reqd": ld_field.get("reqd", False),
-                        "read_only": ld_field.get("read_only", False),
-                        "placeholder": ld_field.get("placeholder", ''),
+                        "hidden": ld_record.get("hidden", False),
+                        "reqd": ld_record.get("reqd", False),
+                        "read_only": ld_record.get("read_only", False),
+                        "placeholder": ld_record.get("placeholder", ''),
                         "options": la_options,
                         "doctype": ld_field.get("options"),
-                        "parent": ld_record.get("parent")
+                        "parent": ld_record.get("parent"),
+                        "default_value": ld_record.get("custom_default_value")
                     })
 
     return la_layout
 
 @frappe.whitelist()
-def update_item_attribute(child_doctype, parent_docName, target_field, new_value):
+def fn_update_child_table(doctype, doc_name, field_name, new_value, target_fieldname):
     """
     Updates the 'attribute_value' field for a specific attribute in a child doctype linked to a parent document.
 
-    This function searches for a child record in the specified 'child_doctype' where the 'parent' matches the 
-    provided 'parent_docname' and the 'attribute' matches the 'target_field'. If such a record is found, it updates 
+    This function searches for a child record in the specified 'doctype' where the 'parent' matches the 
+    provided 'doc_name' and the 'attribute' matches the 'field_name'. If such a record is found, it updates 
     the 'attribute_value' to the new value specified. 
 
     Parameters:
-    - child_doctype (str): The name of the child doctype to search for.
-    - parent_docname (str): The name of the parent document to look for in the child records.
-    - target_field (str): The name of the field in the child record that identifies the attribute to be updated.
+    - doctype (str): The name of the child doctype to search for.
+    - doc_name (str): The name of the parent document to look for in the child records.
+    - field_name (str): The name of the field in the child record that identifies the attribute to be updated.
     - new_value (str): The new value to set for the 'attribute_value' field.
-
+    - target_filename(str): the child table field your are updating the value
     Returns:
     - dict: A dictionary with a success message if the update was successful, or an error message if it failed.
     """
     try:
         # get the attribute detail from child doctype
-        la_child_docs = frappe.get_all(child_doctype,
+        la_child_docs = frappe.get_all(doctype,
             filters={
-                "parent": parent_docName,
-                "attribute": target_field
+                "parent": doc_name,
+                "attribute": field_name
             },
             limit=1 
         )
         if not la_child_docs:
             return {"error": _("Attribute not found for the specified parent.")}
 
-        # Update the attribute_value directly
-        frappe.db.set_value(child_doctype, la_child_docs[0].name, "attribute_value", new_value)
+        try:
+            # Update the attribute_value directly
+            frappe.db.set_value(doctype, la_child_docs[0].name, target_fieldname, new_value)
 
-        return {"message": _("Updated successfully")}
+            return {"message": _("Updated successfully")}
+        except frappe.exceptions.ValidationError as ve:
+            return {"error": _("Validation Error: {}".format(str(ve)))}
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
         return {"error": _("Failed to update: {}".format(str(e)))}
 
+
 @frappe.whitelist()
-def create_item_from_design(design_name):
+def fn_create_item_from_design(design_name):
     """
     Creates a new item variant based on the details from the specified design document. 
     This function uses the design template to fetch the item template and associated attributes, 
@@ -229,7 +237,7 @@ def get_quotation(name):
     return quotation
 
 @frappe.whitelist()
-def get_table_rows_columns(doctype, docname):
+def fn_get_table_rows_columns(doctype, docname):
     """
     Fetches the metadata and rows for all table fields in a specified parent document.
     The function identifies fields of type "Table" in the parent doctype, retrieves their metadata 
@@ -297,7 +305,7 @@ def get_table_rows_columns(doctype, docname):
     return ld_result
 
 @frappe.whitelist()
-def update_child_table_row(doctype, docname, child_field, values):
+def fn_update_child_table_row(doctype, docname, child_field, values):
     """
     Updates or adds rows in a child table field of a specified document.
 
@@ -362,31 +370,31 @@ def update_child_table_row(doctype, docname, child_field, values):
         frappe.log_error(message=frappe.get_traceback(), title="Update Error")
         return {"status": "error", "message": str(e)}
 
+# @frappe.whitelist()
+# def fn_get_variant_attributes(name):
+#     """
+#     Fetch attributes of an Item variant.
+
+#     Args:
+#         item_name (str): The name of the Item.
+
+#     Returns:
+#         list: List of attributes from the Item's attribute child table.
+#     """
+#     try:
+#         # Fetch the Item document
+#         item = frappe.get_doc("Item", name)
+#         return item.attributes
+
+#     except frappe.DoesNotExistError:
+#         return 'DoesNotExistError'
+#         frappe.throw(_("Item with name '{0}' does not exist").format(name))
+#     except Exception as e:
+#         frappe.log_error(frappe.get_traceback(), "Error in fn_get_variant_attributes api")
+#         frappe.throw(_("An unexpected error occurred while fetching the item attributes."))
+
 @frappe.whitelist()
-def get_variant_attributes(name):
-    """
-    Fetch attributes of an Item variant.
-
-    Args:
-        item_name (str): The name of the Item.
-
-    Returns:
-        list: List of attributes from the Item's attribute child table.
-    """
-    try:
-        # Fetch the Item document
-        item = frappe.get_doc("Item", name)
-        return item.attributes
-
-    except frappe.DoesNotExistError:
-        return 'DoesNotExistError'
-        frappe.throw(_("Item with name '{0}' does not exist").format(name))
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Error in get_variant_attributes")
-        frappe.throw(_("An unexpected error occurred while fetching the item attributes."))
-
-@frappe.whitelist()
-def get_item_attribute_record():
+def fn_get_item_attribute_record():
     la_attributes = frappe.get_all("Item Attribute", fields=["*"], filters={"custom_is_group": 0})
     for ld_attribute in la_attributes:
         

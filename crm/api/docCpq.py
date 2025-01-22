@@ -178,6 +178,7 @@ def fn_create_item_from_design(design_name):
     ld_item_variant.item_group = ld_template_item.item_group
     ld_item_variant.is_stock_item = ld_template_item.is_stock_item
     ld_item_variant.variant_of = ld_design_doc.design_template
+    ld_item_variant.stock_uom = ld_template_item.stock_uom
     ld_item_variant.include_item_in_manufacturing = 0
 
     for ld_attribute in ld_design_doc.design_attributes:

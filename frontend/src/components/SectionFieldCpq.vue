@@ -24,6 +24,7 @@
                 placeholder="Select value"
                 :debounce="500"
                 @change="fnUpdateResource(ldChild.doctype, ldChild.parent, ldChild.label, $event.target.value, data.doctype, ldChild.name)"
+                :disabled="ldField.read_only == 1 ? true : false"
               />
               <FormControl
                 v-else
@@ -33,6 +34,7 @@
                 placeholder="Enter Value"
                 :debounce="500"
                 @change="fnHandleInputChange(ldChild.doctype, ldChild.parent, ldChild.label, $event.target.value, data.doctype, ldChild.name, ldChild)"
+                :disabled="ldField.read_only == 1 ? true : false"
               />
             </div>
         </div>

@@ -243,6 +243,17 @@ const fieldsLayout = createResource({
   cache: ['fieldsLayout', props.itemId],
   params: { doctype: 'Item', name: props.itemId },
   auto: true,
-})
+  transform(data) {
+    if(item.data?.variant_of){
+      for(let ldItem of data){
+        ldItem.read_only = 1
+        for (let ldField of ldItem.fields){
+          ldField.read_only = 1
+        }
+      }
+    }  
+  }
+}
+)
 
 </script>

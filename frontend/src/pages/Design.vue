@@ -221,6 +221,7 @@ function updateDesign(fieldname, value, callback) {
     auto: true,
     onSuccess: () => {
       design.reload()
+      fieldsLayout.reload()
       reload.value = true
       createToast({
         title: __('Design updated'),
@@ -379,7 +380,18 @@ const fieldsLayout = createResource({
   cache: ['fieldsLayout', props.designId],
   params: { doctype: 'Design', name: props.designId },
   auto: true,
-})
+  transform(data) {
+    if(design.data?.item){
+      for(let ldItem of data){
+        ldItem.read_only = 1
+        for (let ldField of ldItem.fields){
+          ldField.read_only = 1
+        }
+      }
+    }  
+  }
+}
+)
 
 const createItem = () => {
   isItemCreating.value = true;
@@ -394,7 +406,6 @@ const createItem = () => {
         icon: 'check',
         iconClasses: 'text-green-600',
       })
-      
     },
     onError: (err) => {
       isItemCreating.value = false;

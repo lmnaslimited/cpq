@@ -1,0 +1,69 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-26 18:00:36.658927",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "field_name",
+  "length",
+  "field_type",
+  "input_conversion",
+  "sample_input",
+  "output_conversion",
+  "sample_output"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "field_name",
+   "fieldtype": "Data",
+   "label": "Field Name"
+  },
+  {
+   "columns": 2,
+   "fieldname": "length",
+   "fieldtype": "Int",
+   "label": "Length"
+  },
+  {
+   "columns": 2,
+   "fieldname": "field_type",
+   "fieldtype": "Data",
+   "label": "Field Type"
+  },
+  {
+   "fieldname": "input_conversion",
+   "fieldtype": "Data",
+   "label": "Input Conversion"
+  },
+  {
+   "fieldname": "sample_input",
+   "fieldtype": "Data",
+   "label": "Sample Input"
+  },
+  {
+   "fieldname": "output_conversion",
+   "fieldtype": "Data",
+   "label": "Output Conversion"
+  },
+  {
+   "fieldname": "sample_output",
+   "fieldtype": "Data",
+   "label": "Sample Output"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-01-26 19:10:08.969082",
+ "modified_by": "Administrator",
+ "module": "CPQ",
+ "name": "Input Sequence",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

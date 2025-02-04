@@ -43,6 +43,37 @@ export const cpqRoutes = [
       component: () => import(`@/pages/${handleMobileView('Quotation')}.vue`),
       props: true,
     },
+    {
+      alias: '/condition-types',
+      path: '/condition-types/view/:viewType?',
+      name: 'Condition Types',
+      component: () => import('@/pages/ConditionTypes.vue'),
+      meta: { scrollPos: { top: 0, left: 0 } },
+    },
+    {
+      path: '/condition-types/:conditionId',
+      name: 'Condition Type',
+      component: () => import(`@/pages/${handleMobileView('ConditionType')}.vue`),
+      props: true,
+    },
+    {
+      path: '/condition-types/create',
+      name: 'Create',
+      component: () => import('@/pages/CreateConditionType.vue'),
+    },
+    {
+      alias: '/condition-values',
+      path: '/condition-values/view/:viewType?',
+      name: 'Condition Values',
+      component: () => import('@/pages/ConditionValues.vue'),
+      meta: { scrollPos: { top: 0, left: 0 } },
+    },
+    {
+      path: '/condition-values/:conditionValueId',
+      name: 'Condition Value',
+      component: () => import(`@/pages/${handleMobileView('ConditionValue')}.vue`),
+      props: true,
+    },
 ]
 
 // importing the icon
@@ -66,6 +97,16 @@ export const cpqLinks = [
       icon: NoteIcon,
       to: 'Quotations',
     },
+    {
+      label: 'Condition Types',
+      icon: NoteIcon,
+      to: 'Condition Types',
+    },
+    {
+      label: 'Condition Values',
+      icon: TaskIcon,
+      to: 'Condition Values',
+    },
   
 ]
 
@@ -78,6 +119,10 @@ export function getCustomIcon(routeName) {
         return TaskIcon
       case 'Quotations':
         return NoteIcon
+      case 'Condition Types':
+        return NoteIcon
+      case 'Condition Values':
+        return TaskIcon
       default:
         return null
     }

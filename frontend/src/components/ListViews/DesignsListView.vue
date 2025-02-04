@@ -85,7 +85,7 @@
               size="sm"
             />
           </div>
-          
+
         </template>
         <template #default="{ label }">
           <div
@@ -182,7 +182,7 @@
     <ListSelectBanner>
       <template #actions="{ selections, unselectAll }">
         <Dropdown
-          :options="listBulkActionsRef.bulkActions(selections, unselectAll)"
+          :options="filteredActions(selections, unselectAll)"
         >
           <Button icon="more-horizontal" variant="ghost" />
         </Dropdown>
@@ -219,11 +219,13 @@ import {
   ListFooter,
   Dropdown,
   Tooltip,
+  createResource
 } from 'frappe-ui'
 import { sessionStore } from '@/stores/session'
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-
+import { capture } from '@/telemetry'
+import { createToast } from '@/utils'
 const props = defineProps({
   rows: {
     type: Array,
@@ -284,4 +286,55 @@ defineExpose({
     () => listBulkActionsRef.value?.customListActions,
   ),
 })
+const hideDelete = ref(true)
+const handleDelete = (selections, unselectAll) => {
+  createResource({
+    url: 'crm.api.docCpq.delete_items',
+    params:{
+      items: JSON.stringify(Array.from(selections)),
+      doctype: 'Design',
+    },
+    onSuccess(data){
+      console.log("from success", data)
+      if(data.status == 'success'){
+        capture('bulk_delete')
+        createToast({
+          title: __('Deleted successfully'),
+          icon: 'check',
+          iconClasses: 'text-green-600',
+        })
+        unselectAll()
+        list.value.reload()
+      }
+      else if(data.status == 'error'){
+        createToast({
+          title: __('Unable to Deleted'),
+          icon: 'check',
+          iconClasses: 'text-green-600',
+        })
+        list.value.reload()
+      }
+    },
+    onError(data){
+      console.log("from error", data)
+      createToast({
+        title: __('Unable to Delete'),
+        icon: 'check',
+        iconClasses: 'text-green-600',
+      })
+    }
+  }).submit();
+}
+// Filtered actions with an additional custom "Delete" action
+const filteredActions = (selections, unselectAll) => {
+  const actions = listBulkActionsRef.value?.bulkActions(selections, unselectAll) || []
+  // Filter out the original "Delete" action based on hideDelete
+  const filtered = actions.filter(action => !(action.label === 'Delete' && hideDelete.value))
+  // Add a new "Delete" action with a custom onClick handler
+  filtered.push({
+    label: __('Delete'),
+    onClick: () => handleDelete(selections, unselectAll),
+  })
+  return filtered
+}
 </script>

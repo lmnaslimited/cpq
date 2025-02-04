@@ -135,7 +135,9 @@ override_doctype_class = {
 	"User": "crm.overrides.user.CustomUser",
 	"Design": "crm.overrides.design.CustomDesign",
 	"Item": "crm.overrides.item.CustomItem",
-	"Quotation": "crm.overrides.quotation.CustomQuotation"
+	"Quotation": "crm.overrides.quotation.CustomQuotation",
+	"Condition Type": "crm.overrides.condition_type.CustomConditionType",
+	"Condition Value": "crm.overrides.condition_value.CustomConditionValue"
 }
 
 # Document Events

@@ -1,0 +1,108 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2025-01-22 11:51:34.670829",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "document_reference",
+  "condition_type",
+  "enable",
+  "is_formula_based",
+  "is_api_based",
+  "is_value_based",
+  "input_sequence",
+  "output_sequence"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_reference",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Document Reference",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "fieldname": "condition_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Condition Type",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "enable",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enable"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_formula_based",
+   "fieldtype": "Check",
+   "label": "Is Formula Based"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_api_based",
+   "fieldtype": "Check",
+   "label": "Is API Based"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_value_based",
+   "fieldtype": "Check",
+   "label": "Is Value Based"
+  },
+  {
+   "default": "COND.####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "no_copy": 1,
+   "options": "COND.####",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "input_sequence",
+   "fieldtype": "Table",
+   "label": "Input Sequence",
+   "options": "Input Sequence"
+  },
+  {
+   "fieldname": "output_sequence",
+   "fieldtype": "Table",
+   "label": "Output Sequence",
+   "options": "Output Sequence"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-02-03 12:49:47.854088",
+ "modified_by": "Administrator",
+ "module": "CPQ",
+ "name": "Condition Type",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

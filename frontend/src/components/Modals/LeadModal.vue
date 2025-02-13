@@ -1,16 +1,16 @@
 <template>
   <Dialog v-model="show" :options="{ size: '3xl' }">
     <template #body>
-      <div class="bg-white px-4 pb-6 pt-5 sm:px-6">
+      <div class="bg-surface-modal px-4 pb-6 pt-5 sm:px-6">
         <div class="mb-5 flex items-center justify-between">
           <div>
-            <h3 class="text-2xl font-semibold leading-6 text-gray-900">
+            <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
               {{ __('Create Lead') }}
             </h3>
           </div>
           <div class="flex items-center gap-1">
             <Button
-              v-if="isManager()"
+              v-if="isManager() && !isMobileView"
               variant="ghost"
               class="w-7"
               @click="openQuickEntryModal"
@@ -23,7 +23,7 @@
           </div>
         </div>
         <div>
-          <Fields v-if="sections.data" :sections="sections.data" :data="lead" />
+          <FieldLayout v-if="tabs.data" :tabs="tabs.data" :data="lead" />
           <ErrorMessage class="mt-4" v-if="error" :message="__(error)" />
         </div>
       </div>
@@ -43,9 +43,10 @@
 
 <script setup>
 import EditIcon from '@/components/Icons/EditIcon.vue'
-import Fields from '@/components/Fields.vue'
+import FieldLayout from '@/components/FieldLayout/FieldLayout.vue'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
+import { isMobileView } from '@/composables/settings'
 import { capture } from '@/telemetry'
 import { createResource } from 'frappe-ui'
 import { computed, onMounted, ref, reactive, nextTick } from 'vue'
@@ -63,21 +64,27 @@ const router = useRouter()
 const error = ref(null)
 const isLeadCreating = ref(false)
 
-const sections = createResource({
+const tabs = createResource({
   url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
-  cache: ['quickEntryFields', 'CRM Lead'],
+  cache: ['QuickEntry', 'CRM Lead'],
   params: { doctype: 'CRM Lead', type: 'Quick Entry' },
   auto: true,
-  transform: (data) => {
-    return data.forEach((section) => {
-      section.fields.forEach((field) => {
-        if (field.name == 'status') {
-          field.type = 'Select'
-          field.options = leadStatuses.value
-          field.prefix = getLeadStatus(lead.status).iconColorClass
-        } else if (field.name == 'lead_owner') {
-          field.type = 'User'
-        }
+  transform: (_tabs) => {
+    return _tabs.forEach((tab) => {
+      tab.sections.forEach((section) => {
+        section.columns.forEach((column) => {
+          column.fields.forEach((field) => {
+            if (field.fieldname == 'status') {
+              field.fieldtype = 'Select'
+              field.options = leadStatuses.value
+              field.prefix = getLeadStatus(lead.status).color
+            }
+
+            if (field.fieldtype === 'Table') {
+              lead[field.fieldname] = []
+            }
+          })
+        })
       })
     })
   },
@@ -133,8 +140,9 @@ function createNewLead() {
         return error.value
       }
       if (lead.annual_revenue) {
-        lead.annual_revenue = lead.annual_revenue.replace(/,/g, '')
-        if (isNaN(lead.annual_revenue)) {
+        if (typeof lead.annual_revenue === 'string') {
+          lead.annual_revenue = lead.annual_revenue.replace(/,/g, '')
+        } else if (isNaN(lead.annual_revenue)) {
           error.value = __('Annual Revenue should be a number')
           return error.value
         }

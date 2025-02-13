@@ -8,21 +8,22 @@
       </Breadcrumbs>
     </template>
     <template #right-header>
-      <CustomActions v-if="customActions" :actions="customActions" />
-      <component :is="lead.data._assignedTo?.length == 1 ? 'Button' : 'div'">
-        <MultipleAvatar
-          :avatars="lead.data._assignedTo"
-          @click="showAssignmentModal = true"
-        />
-      </component>
-      <Dropdown :options="statusOptions('lead', updateField, customStatuses)">
+      <CustomActions
+        v-if="lead.data._customActions?.length"
+        :actions="lead.data._customActions"
+      />
+      <AssignTo
+        v-model="lead.data._assignedTo"
+        :data="lead.data"
+        doctype="CRM Lead"
+      />
+      <Dropdown
+        :options="statusOptions('lead', updateField, lead.data._customStatuses)"
+      >
         <template #default="{ open }">
-          <Button
-            :label="lead.data.status"
-            :class="getLeadStatus(lead.data.status).colorClass"
-          >
+          <Button :label="lead.data.status">
             <template #prefix>
-              <IndicatorIcon />
+              <IndicatorIcon :class="getLeadStatus(lead.data.status).color" />
             </template>
             <template #suffix>
               <FeatherIcon
@@ -41,19 +42,21 @@
     </template>
   </LayoutHeader>
   <div v-if="lead?.data" class="flex h-full overflow-hidden">
-    <Tabs v-model="tabIndex" v-slot="{ tab }" :tabs="tabs">
-      <Activities
-        ref="activities"
-        doctype="CRM Lead"
-        :tabs="tabs"
-        v-model:reload="reload"
-        v-model:tabIndex="tabIndex"
-        v-model="lead"
-      />
+    <Tabs as="div" v-model="tabIndex" :tabs="tabs">
+      <template #tab-panel>
+        <Activities
+          ref="activities"
+          doctype="CRM Lead"
+          :tabs="tabs"
+          v-model:reload="reload"
+          v-model:tabIndex="tabIndex"
+          v-model="lead"
+        />
+      </template>
     </Tabs>
     <Resizer class="flex flex-col justify-between border-l" side="right">
       <div
-        class="flex h-10.5 cursor-copy items-center border-b px-5 py-2.5 text-lg font-medium"
+        class="flex h-10.5 cursor-copy items-center border-b px-5 py-2.5 text-lg font-medium text-ink-gray-9"
         @click="copyToClipboard(lead.data.name)"
       >
         {{ __(lead.data.name) }}
@@ -108,7 +111,7 @@
             </div>
             <div class="flex flex-col gap-2.5 truncate">
               <Tooltip :text="lead.data.lead_name || __('Set first name')">
-                <div class="truncate text-2xl font-medium">
+                <div class="truncate text-2xl font-medium text-ink-gray-9">
                   {{ lead.data.lead_name || __('Untitled') }}
                 </div>
               </Tooltip>
@@ -150,6 +153,11 @@
                     />
                   </Button>
                 </Tooltip>
+                <Tooltip :text="__('Attach a file')">
+                  <Button class="h-7 w-7" @click="showFilesUploader = true">
+                    <AttachmentIcon class="h-4 w-4" />
+                  </Button>
+                </Tooltip>
               </div>
               <ErrorMessage :message="__(error)" />
             </div>
@@ -162,45 +170,19 @@
         @updateField="updateField"
       />
       <div
-        v-if="fieldsLayout.data"
+        v-if="sections.data"
         class="flex flex-1 flex-col justify-between overflow-hidden"
       >
-        <div class="flex flex-col overflow-y-auto">
-          <div
-            v-for="(section, i) in fieldsLayout.data"
-            :key="section.label"
-            class="flex flex-col p-3"
-            :class="{ 'border-b': i !== fieldsLayout.data.length - 1 }"
-          >
-            <Section :is-opened="section.opened" :label="section.label">
-              <SectionFields
-                :fields="section.fields"
-                :isLastSection="i == fieldsLayout.data.length - 1"
-                v-model="lead.data"
-                @update="updateField"
-              />
-              <template v-if="i == 0 && isManager()" #actions>
-                <Button
-                  variant="ghost"
-                  class="w-7 mr-2"
-                  @click="showSidePanelModal = true"
-                >
-                  <EditIcon class="h-4 w-4" />
-                </Button>
-              </template>
-            </Section>
-          </div>
-        </div>
+        <SidePanelLayout
+          v-model="lead.data"
+          :sections="sections.data"
+          doctype="CRM Lead"
+          @update="updateField"
+          @reload="sections.reload"
+        />
       </div>
     </Resizer>
   </div>
-  <AssignmentModal
-    v-if="showAssignmentModal"
-    v-model="showAssignmentModal"
-    v-model:assignees="lead.data._assignedTo"
-    :doc="lead.data"
-    doctype="CRM Lead"
-  />
   <Dialog
     v-model="showConvertToDealModal"
     :options="{
@@ -216,7 +198,7 @@
     }"
   >
     <template #body-content>
-      <div class="mb-4 flex items-center gap-2 text-gray-600">
+      <div class="mb-4 flex items-center gap-2 text-ink-gray-5">
         <OrganizationsIcon class="h-4 w-4" />
         <label class="block text-base">{{ __('Organization') }}</label>
       </div>
@@ -243,7 +225,7 @@
         </div>
       </div>
 
-      <div class="mb-4 mt-6 flex items-center gap-2 text-gray-600">
+      <div class="mb-4 mt-6 flex items-center gap-2 text-ink-gray-5">
         <ContactsIcon class="h-4 w-4" />
         <label class="block text-base">{{ __('Contact') }}</label>
       </div>
@@ -267,20 +249,27 @@
       </div>
     </template>
   </Dialog>
-  <SidePanelModal
-    v-if="showSidePanelModal"
-    v-model="showSidePanelModal"
-    @reload="() => fieldsLayout.reload()"
+  <FilesUploader
+    v-if="lead.data?.name"
+    v-model="showFilesUploader"
+    doctype="CRM Lead"
+    :docname="lead.data.name"
+    @after="
+      () => {
+        activities?.all_activities?.reload()
+        changeTabTo('attachments')
+      }
+    "
   />
 </template>
 <script setup>
 import Icon from '@/components/Icon.vue'
 import Resizer from '@/components/Resizer.vue'
-import EditIcon from '@/components/Icons/EditIcon.vue'
 import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
 import EmailIcon from '@/components/Icons/EmailIcon.vue'
 import Email2Icon from '@/components/Icons/Email2Icon.vue'
 import CommentIcon from '@/components/Icons/CommentIcon.vue'
+import DetailsIcon from '@/components/Icons/DetailsIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
@@ -290,14 +279,13 @@ import CameraIcon from '@/components/Icons/CameraIcon.vue'
 import LinkIcon from '@/components/Icons/LinkIcon.vue'
 import OrganizationsIcon from '@/components/Icons/OrganizationsIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
+import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import Activities from '@/components/Activities/Activities.vue'
-import AssignmentModal from '@/components/Modals/AssignmentModal.vue'
-import SidePanelModal from '@/components/Settings/SidePanelModal.vue'
-import MultipleAvatar from '@/components/MultipleAvatar.vue'
+import AssignTo from '@/components/AssignTo.vue'
+import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
 import Link from '@/components/Controls/Link.vue'
-import Section from '@/components/Section.vue'
-import SectionFields from '@/components/SectionFields.vue'
+import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import SLASection from '@/components/SLASection.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import {
@@ -309,10 +297,10 @@ import {
   copyToClipboard,
 } from '@/utils'
 import { getView } from '@/utils/view'
+import { getSettings } from '@/stores/settings'
 import { globalStore } from '@/stores/global'
 import { contactsStore } from '@/stores/contacts'
 import { statusesStore } from '@/stores/statuses'
-import { usersStore } from '@/stores/users'
 import { whatsappEnabled, callEnabled } from '@/composables/settings'
 import { capture } from '@/telemetry'
 import {
@@ -331,10 +319,10 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
 
+const { brand } = getSettings()
 const { $dialog, $socket, makeCall } = globalStore()
 const { getContactByName, contacts } = contactsStore()
 const { statusOptions, getLeadStatus } = statusesStore()
-const { isManager } = usersStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -345,15 +333,13 @@ const props = defineProps({
   },
 })
 
-const customActions = ref([])
-const customStatuses = ref([])
-
 const lead = createResource({
   url: 'crm.fcrm.doctype.crm_lead.api.get_lead',
   params: { name: props.leadId },
   cache: ['lead', props.leadId],
-  onSuccess: async (data) => {
-    let obj = {
+  onSuccess: (data) => {
+    setupAssignees(lead)
+    setupCustomizations(lead, {
       doc: data,
       $dialog,
       $socket,
@@ -361,16 +347,9 @@ const lead = createResource({
       updateField,
       createToast,
       deleteDoc: deleteLead,
-      resource: {
-        lead,
-        fieldsLayout,
-      },
+      resource: { lead, sections },
       call,
-    }
-    setupAssignees(data)
-    let customization = await setupCustomizations(data, obj)
-    customActions.value = customization.actions || []
-    customStatuses.value = customization.statuses || []
+    })
   },
 })
 
@@ -380,8 +359,7 @@ onMounted(() => {
 })
 
 const reload = ref(false)
-const showAssignmentModal = ref(false)
-const showSidePanelModal = ref(false)
+const showFilesUploader = ref(false)
 
 function updateLead(fieldname, value, callback) {
   value = Array.isArray(fieldname) ? '' : value
@@ -403,7 +381,7 @@ function updateLead(fieldname, value, callback) {
       createToast({
         title: __('Lead updated'),
         icon: 'check',
-        iconClasses: 'text-green-600',
+        iconClasses: 'text-ink-green-3',
       })
       callback?.()
     },
@@ -412,7 +390,7 @@ function updateLead(fieldname, value, callback) {
         title: __('Error updating lead'),
         text: __(err.messages?.[0]),
         icon: 'x',
-        iconClasses: 'text-red-600',
+        iconClasses: 'text-ink-red-4',
       })
     },
   })
@@ -425,7 +403,7 @@ function validateRequired(fieldname, value) {
       title: __('Error Updating Lead'),
       text: __('{0} is a required field', [meta[fieldname].label]),
       icon: 'x',
-      iconClasses: 'text-red-600',
+      iconClasses: 'text-ink-red-4',
     })
     return true
   }
@@ -460,6 +438,7 @@ const breadcrumbs = computed(() => {
 usePageMeta(() => {
   return {
     title: lead.data?.lead_name || lead.data?.name,
+    icon: brand.favicon,
   }
 })
 
@@ -481,6 +460,11 @@ const tabs = computed(() => {
       icon: CommentIcon,
     },
     {
+      name: 'Data',
+      label: __('Data'),
+      icon: DetailsIcon,
+    },
+    {
       name: 'Calls',
       label: __('Calls'),
       icon: PhoneIcon,
@@ -497,6 +481,11 @@ const tabs = computed(() => {
       icon: NoteIcon,
     },
     {
+      name: 'Attachments',
+      label: __('Attachments'),
+      icon: AttachmentIcon,
+    },
+    {
       name: 'WhatsApp',
       label: __('WhatsApp'),
       icon: WhatsAppIcon,
@@ -506,7 +495,7 @@ const tabs = computed(() => {
   return tabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
 })
 
-const { tabIndex } = useActiveTabManager(tabs, 'lastLeadTab')
+const { tabIndex, changeTabTo } = useActiveTabManager(tabs, 'lastLeadTab')
 
 watch(tabs, (value) => {
   if (value && route.params.tabName) {
@@ -526,10 +515,10 @@ function validateFile(file) {
   }
 }
 
-const fieldsLayout = createResource({
-  url: 'crm.api.doc.get_sidebar_fields',
-  cache: ['fieldsLayout', props.leadId],
-  params: { doctype: 'CRM Lead', name: props.leadId },
+const sections = createResource({
+  url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_sidepanel_sections',
+  cache: ['sidePanelSections', 'CRM Lead'],
+  params: { doctype: 'CRM Lead' },
   auto: true,
 })
 
@@ -564,7 +553,7 @@ async function convertToDeal(updated) {
       title: __('Error'),
       text: __('Please select an existing contact'),
       icon: 'x',
-      iconClasses: 'text-red-600',
+      iconClasses: 'text-ink-red-4',
     })
     return
   }
@@ -574,7 +563,7 @@ async function convertToDeal(updated) {
       title: __('Error'),
       text: __('Please select an existing organization'),
       icon: 'x',
-      iconClasses: 'text-red-600',
+      iconClasses: 'text-ink-red-4',
     })
     return
   }

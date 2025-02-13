@@ -103,7 +103,7 @@
         >
           {{ getRow(itemName, titleField).label }}
         </div>
-        <div class="text-gray-500" v-else>{{ __('No Title') }}</div>
+        <div class="text-ink-gray-4" v-else>{{ __('No Title') }}</div>
       </div>
     </template>
 
@@ -172,7 +172,7 @@
 
     <template #actions="{ itemName }">
       <div class="flex gap-2 items-center justify-between">
-        <div class="text-gray-600 flex items-center gap-1.5">
+        <div class="text-ink-gray-5 flex items-center gap-1.5">
           <EmailAtIcon class="h-4 w-4" />
           <span v-if="getRow(itemName, '_email_count').label">
             {{ getRow(itemName, '_email_count').label }}
@@ -226,7 +226,7 @@
   />
   <div v-else-if="deals.data" class="flex h-full items-center justify-center">
     <div
-      class="flex flex-col items-center gap-3 text-xl font-medium text-gray-500"
+      class="flex flex-col items-center gap-3 text-xl font-medium text-ink-gray-4"
     >
       <DealsIcon class="h-10 w-10" />
       <span>{{ __('No {0} Found', [__('Deals')]) }}</span>
@@ -281,23 +281,19 @@ import NoteModal from '@/components/Modals/NoteModal.vue'
 import TaskModal from '@/components/Modals/TaskModal.vue'
 import QuickEntryModal from '@/components/Modals/QuickEntryModal.vue'
 import ViewControls from '@/components/ViewControls.vue'
+import { getMeta } from '@/stores/meta'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
 import { organizationsStore } from '@/stores/organizations'
 import { statusesStore } from '@/stores/statuses'
 import { callEnabled } from '@/composables/settings'
-import {
-  dateFormat,
-  dateTooltipFormat,
-  timeAgo,
-  website,
-  formatNumberIntoCurrency,
-  formatTime,
-} from '@/utils'
+import { formatDate, timeAgo, website, formatTime } from '@/utils'
 import { Tooltip, Avatar, Dropdown } from 'frappe-ui'
 import { useRoute } from 'vue-router'
 import { ref, reactive, computed, h } from 'vue'
 
+const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
+  getMeta('CRM Deal')
 const { makeCall } = globalStore()
 const { getUser } = usersStore()
 const { getOrganization } = organizationsStore()
@@ -332,40 +328,41 @@ function getRow(name, field) {
 const rows = computed(() => {
   if (!deals.value?.data?.data) return []
   if (deals.value.data.view_type === 'group_by') {
-    if (!deals.value?.data.group_by_field?.name) return []
+    if (!deals.value?.data.group_by_field?.fieldname) return []
     return getGroupedByRows(
       deals.value?.data.data,
       deals.value?.data.group_by_field,
+      deals.value.data.columns,
     )
   } else if (deals.value.data.view_type === 'kanban') {
-    return getKanbanRows(deals.value.data.data)
+    return getKanbanRows(deals.value.data.data, deals.value.data.fields)
   } else {
-    return parseRows(deals.value?.data.data)
+    return parseRows(deals.value?.data.data, deals.value.data.columns)
   }
 })
 
-function getGroupedByRows(listRows, groupByField) {
+function getGroupedByRows(listRows, groupByField, columns) {
   let groupedRows = []
 
   groupByField.options?.forEach((option) => {
     let filteredRows = []
 
     if (!option) {
-      filteredRows = listRows.filter((row) => !row[groupByField.name])
+      filteredRows = listRows.filter((row) => !row[groupByField.fieldname])
     } else {
-      filteredRows = listRows.filter((row) => row[groupByField.name] == option)
+      filteredRows = listRows.filter((row) => row[groupByField.fieldname] == option)
     }
 
     let groupDetail = {
       label: groupByField.label,
       group: option || __(' '),
       collapsed: false,
-      rows: parseRows(filteredRows),
+      rows: parseRows(filteredRows, columns),
     }
-    if (groupByField.name == 'status') {
+    if (groupByField.fieldname == 'status') {
       groupDetail.icon = () =>
         h(IndicatorIcon, {
-          class: getDealStatus(option)?.iconColorClass,
+          class: getDealStatus(option)?.color,
         })
     }
     groupedRows.push(groupDetail)
@@ -374,21 +371,45 @@ function getGroupedByRows(listRows, groupByField) {
   return groupedRows || listRows
 }
 
-function getKanbanRows(data) {
+function getKanbanRows(data, columns) {
   let _rows = []
   data.forEach((column) => {
     column.data?.forEach((row) => {
       _rows.push(row)
     })
   })
-  return parseRows(_rows)
+  return parseRows(_rows, columns)
 }
 
-function parseRows(rows) {
+function parseRows(rows, columns = []) {
   return rows.map((deal) => {
     let _rows = {}
     deals.value.data.rows.forEach((row) => {
       _rows[row] = deal[row]
+
+      let fieldType = columns?.find(
+        (col) => (col.key || col.value) == row,
+      )?.type
+
+      if (
+        fieldType &&
+        ['Date', 'Datetime'].includes(fieldType) &&
+        !['modified', 'creation'].includes(row)
+      ) {
+        _rows[row] = formatDate(deal[row], '', true, fieldType == 'Datetime')
+      }
+
+      if (fieldType && fieldType == 'Currency') {
+        _rows[row] = getFormattedCurrency(row, deal)
+      }
+
+      if (fieldType && fieldType == 'Float') {
+        _rows[row] = getFormattedFloat(row, deal)
+      }
+
+      if (fieldType && fieldType == 'Percent') {
+        _rows[row] = getFormattedPercent(row, deal)
+      }
 
       if (row == 'organization') {
         _rows[row] = {
@@ -397,15 +418,10 @@ function parseRows(rows) {
         }
       } else if (row === 'website') {
         _rows[row] = website(deal.website)
-      } else if (row == 'annual_revenue') {
-        _rows[row] = formatNumberIntoCurrency(
-          deal.annual_revenue,
-          deal.currency,
-        )
       } else if (row == 'status') {
         _rows[row] = {
           label: deal.status,
-          color: getDealStatus(deal.status)?.iconColorClass,
+          color: getDealStatus(deal.status)?.color,
         }
       } else if (row == 'sla_status') {
         let value = deal.sla_status
@@ -418,7 +434,7 @@ function parseRows(rows) {
               : 'orange'
         if (value == 'First Response Due') {
           value = __(timeAgo(deal.response_by))
-          tooltipText = dateFormat(deal.response_by, dateTooltipFormat)
+          tooltipText = formatDate(deal.response_by)
           if (new Date(deal.response_by) < new Date()) {
             color = 'red'
           }
@@ -445,7 +461,7 @@ function parseRows(rows) {
         }))
       } else if (['modified', 'creation'].includes(row)) {
         _rows[row] = {
-          label: dateFormat(deal[row], dateTooltipFormat),
+          label: formatDate(deal[row]),
           timeAgo: __(timeAgo(deal[row])),
         }
       } else if (
@@ -455,7 +471,7 @@ function parseRows(rows) {
       ) {
         let field = row == 'response_by' ? 'response_by' : 'first_responded_on'
         _rows[row] = {
-          label: deal[field] ? dateFormat(deal[field], dateTooltipFormat) : '',
+          label: deal[field] ? formatDate(deal[field]) : '',
           timeAgo: deal[row]
             ? row == 'first_response_time'
               ? formatTime(deal[row])

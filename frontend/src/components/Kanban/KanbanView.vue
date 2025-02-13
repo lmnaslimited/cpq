@@ -11,31 +11,32 @@
       <template #item="{ element: column }">
         <div
           v-if="!column.column.delete"
-          class="flex flex-col gap-2.5 min-w-72 w-72 hover:bg-gray-100 rounded-lg p-2.5"
+          class="flex flex-col gap-2.5 min-w-72 w-72 hover:bg-surface-gray-2 rounded-lg p-2.5"
         >
           <div class="flex gap-2 items-center group justify-between">
             <div class="flex items-center text-base">
               <NestedPopover>
                 <template #target>
-                  <Button variant="ghost" size="sm" class="hover:!bg-gray-100">
-                    <IndicatorIcon
-                      :class="colorClasses(column.column.color, true)"
-                    />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="hover:!bg-surface-gray-2"
+                  >
+                    <IndicatorIcon :class="parseColor(column.column.color)" />
                   </Button>
                 </template>
                 <template #body="{ close }">
                   <div
-                    class="flex flex-col gap-3 px-3 py-2.5 rounded-lg border border-gray-100 bg-white shadow-xl"
+                    class="flex flex-col gap-3 px-3 py-2.5 min-w-40 rounded-lg bg-surface-modal shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
                   >
                     <div class="flex gap-1">
                       <Button
-                        :class="colorClasses(color)"
                         variant="ghost"
                         v-for="color in colors"
                         :key="color"
                         @click="() => (column.column.color = color)"
                       >
-                        <IndicatorIcon />
+                        <IndicatorIcon :class="parseColor(color)" />
                       </Button>
                     </div>
                     <div class="flex flex-row-reverse">
@@ -48,7 +49,7 @@
                   </div>
                 </template>
               </NestedPopover>
-              <div>{{ column.column.name }}</div>
+              <div class="text-ink-gray-9">{{ column.column.name }}</div>
             </div>
             <div class="flex">
               <Dropdown :options="actions(column)">
@@ -80,7 +81,7 @@
               <template #item="{ element: fields }">
                 <component
                   :is="options.getRoute ? 'router-link' : 'div'"
-                  class="pt-3 px-3.5 pb-2.5 rounded-lg border bg-white text-base flex flex-col"
+                  class="pt-3 px-3.5 pb-2.5 rounded-lg border bg-surface-white text-base flex flex-col text-ink-gray-9"
                   :data-name="fields.name"
                   v-bind="{
                     to: options.getRoute ? options.getRoute(fields) : undefined,
@@ -97,7 +98,7 @@
                       <div v-if="fields[titleField]">
                         {{ fields[titleField] }}
                       </div>
-                      <div class="text-gray-500" v-else>
+                      <div class="text-ink-gray-4" v-else>
                         {{ __('No Title') }}
                       </div>
                     </div>
@@ -168,7 +169,7 @@
 import Autocomplete from '@/components/frappe-ui/Autocomplete.vue'
 import NestedPopover from '@/components/NestedPopover.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
-import { isTouchScreenDevice } from '@/utils'
+import { isTouchScreenDevice, colors, parseColor } from '@/utils'
 import Draggable from 'vuedraggable'
 import { Dropdown } from 'frappe-ui'
 import { computed } from 'vue'
@@ -261,33 +262,4 @@ function updateColumn(d) {
 
   emit('update', data)
 }
-
-function colorClasses(color, onlyIcon = false) {
-  let textColor = `!text-${color}-600`
-  if (color == 'black') {
-    textColor = '!text-gray-900'
-  } else if (['gray', 'green'].includes(color)) {
-    textColor = `!text-${color}-700`
-  }
-
-  let bgColor = `!bg-${color}-100 hover:!bg-${color}-200 active:!bg-${color}-300`
-
-  return [textColor, onlyIcon ? '' : bgColor]
-}
-
-const colors = [
-  'gray',
-  'blue',
-  'green',
-  'red',
-  'pink',
-  'orange',
-  'amber',
-  'yellow',
-  'cyan',
-  'teal',
-  'violet',
-  'purple',
-  'black',
-]
 </script>

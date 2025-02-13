@@ -65,7 +65,7 @@
     >
       <div
         v-for="filter in quickFilterList"
-        :key="filter.name"
+        :key="filter.fieldname"
         class="m-1 min-w-36"
       >
         <QuickFilterField
@@ -224,6 +224,7 @@ import GroupBy from '@/components/GroupBy.vue'
 import FadedScrollableDiv from '@/components/FadedScrollableDiv.vue'
 import ColumnSettings from '@/components/ColumnSettings.vue'
 import KanbanSettings from '@/components/Kanban/KanbanSettings.vue'
+import { getSettings } from '@/stores/settings'
 import { globalStore } from '@/stores/global'
 import { viewsStore } from '@/stores/views'
 import { usersStore } from '@/stores/users'
@@ -260,6 +261,7 @@ const props = defineProps({
   },
 })
 
+const { brand } = getSettings()
 const { $dialog } = globalStore()
 const { reload: reloadView, getView } = viewsStore()
 const { isManager } = usersStore()
@@ -320,6 +322,7 @@ usePageMeta(() => {
   return {
     title: label,
     emoji: isEmoji(currentView.value.icon) ? currentView.value.icon : '',
+    icon: brand.favicon,
   }
 })
 
@@ -458,7 +461,12 @@ const export_all = ref(false)
 
 async function exportRows() {
   let fields = JSON.stringify(list.value.data.columns.map((f) => f.key))
-  let filters = JSON.stringify(list.value.params.filters)
+
+  let filters = JSON.stringify({
+    ...props.filters,
+    ...list.value.params.filters,
+  })
+
   let order_by = list.value.params.order_by
   let page_length = list.value.params.page_length
   if (export_all.value) {
@@ -586,27 +594,29 @@ const viewsDropdownOptions = computed(() => {
 })
 
 const quickFilterList = computed(() => {
-  let filters = [{ name: 'name', label: __('ID') }]
+  let filters = [{ fieldname: 'name', fieldtype: 'Data', label: __('ID') }]
   if (quickFilters.data) {
     filters.push(...quickFilters.data)
   }
 
   filters.forEach((filter) => {
-    filter['value'] = filter.type == 'Check' ? false : ''
-    if (list.value.params?.filters[filter.name]) {
-      let value = list.value.params.filters[filter.name]
+    filter['value'] = filter.fieldtype == 'Check' ? false : ''
+    if (list.value.params?.filters[filter.fieldname]) {
+      let value = list.value.params.filters[filter.fieldname]
       if (Array.isArray(value)) {
         if (
           (['Check', 'Select', 'Link', 'Date', 'Datetime'].includes(
-            filter.type,
+            filter.fieldtype,
           ) &&
             value[0]?.toLowerCase() == 'like') ||
           value[0]?.toLowerCase() != 'like'
         )
           return
         filter['value'] = value[1]?.replace(/%/g, '')
+      } else if (typeof value == 'boolean') {
+        filter['value'] = value
       } else {
-        filter['value'] = value.replace(/%/g, '')
+        filter['value'] = value?.replace(/%/g, '')
       }
     }
   })
@@ -623,9 +633,11 @@ const quickFilters = createResource({
 
 function applyQuickFilter(filter, value) {
   let filters = { ...list.value.params.filters }
-  let field = filter.name
+  let field = filter.fieldname
   if (value) {
-    if (['Check', 'Select', 'Link', 'Date', 'Datetime'].includes(filter.type)) {
+    if (
+      ['Check', 'Select', 'Link', 'Date', 'Datetime'].includes(filter.fieldtype)
+    ) {
       filters[field] = value
     } else {
       filters[field] = ['LIKE', `%${value}%`]

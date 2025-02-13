@@ -36,7 +36,11 @@
         </Button>
       </ListHeaderItem>
     </ListHeader>
-    <ListRows :rows="rows" v-slot="{ idx, column, item, row }">
+    <ListRows
+      :rows="rows"
+      v-slot="{ idx, column, item, row }"
+      doctype="CRM Lead"
+    >
       <div v-if="column.key === '_assign'" class="flex items-center">
         <MultipleAvatar
           :avatars="item"
@@ -53,7 +57,7 @@
           "
         />
       </div>
-      <ListRowItem v-else :item="item">
+      <ListRowItem v-else :item="item" :align="column.align">
         <template #prefix>
           <div v-if="column.key === 'status'">
             <IndicatorIcon :class="item.color" />
@@ -159,7 +163,7 @@
               type="checkbox"
               :modelValue="item"
               :disabled="true"
-              class="text-gray-900"
+              class="text-ink-gray-9"
             />
           </div>
           <div

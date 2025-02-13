@@ -1,16 +1,16 @@
 <template>
   <Dialog v-model="show" :options="{ size: '3xl' }">
     <template #body>
-      <div class="bg-white px-4 pb-6 pt-5 sm:px-6">
+      <div class="bg-surface-modal px-4 pb-6 pt-5 sm:px-6">
         <div class="mb-5 flex items-center justify-between">
           <div>
-            <h3 class="text-2xl font-semibold leading-6 text-gray-900">
+            <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
               {{ __('Create Deal') }}
             </h3>
           </div>
           <div class="flex items-center gap-1">
             <Button
-              v-if="isManager()"
+              v-if="isManager() && !isMobileView"
               variant="ghost"
               class="w-7"
               @click="openQuickEntryModal"
@@ -23,21 +23,35 @@
           </div>
         </div>
         <div>
-          <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div class="flex items-center gap-3 text-sm text-gray-600">
+          <div
+            v-if="hasOrganizationSections || hasContactSections"
+            class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3"
+          >
+            <div
+              v-if="hasOrganizationSections"
+              class="flex items-center gap-3 text-sm text-ink-gray-5"
+            >
               <div>{{ __('Choose Existing Organization') }}</div>
               <Switch v-model="chooseExistingOrganization" />
             </div>
-            <div class="flex items-center gap-3 text-sm text-gray-600">
+            <div
+              v-if="hasContactSections"
+              class="flex items-center gap-3 text-sm text-ink-gray-5"
+            >
               <div>{{ __('Choose Existing Contact') }}</div>
               <Switch v-model="chooseExistingContact" />
             </div>
           </div>
-          <Fields
-            v-if="filteredSections"
-            class="border-t pt-4"
-            :sections="filteredSections"
+          <div
+            v-if="hasOrganizationSections || hasContactSections"
+            class="h-px w-full border-t my-5"
+          />
+          <FieldLayout
+            ref="fieldLayoutRef"
+            v-if="tabs.data?.length"
+            :tabs="tabs.data"
             :data="deal"
+            doctype="CRM Deal"
           />
           <ErrorMessage class="mt-4" v-if="error" :message="__(error)" />
         </div>
@@ -58,12 +72,13 @@
 
 <script setup>
 import EditIcon from '@/components/Icons/EditIcon.vue'
-import Fields from '@/components/Fields.vue'
+import FieldLayout from '@/components/FieldLayout/FieldLayout.vue'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
+import { isMobileView } from '@/composables/settings'
 import { capture } from '@/telemetry'
 import { Switch, createResource } from 'frappe-ui'
-import { computed, ref, reactive, onMounted, nextTick } from 'vue'
+import { computed, ref, reactive, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -96,70 +111,71 @@ const deal = reactive({
   deal_owner: '',
 })
 
+const hasOrganizationSections = ref(true)
+const hasContactSections = ref(true)
+
 const isDealCreating = ref(false)
 const chooseExistingContact = ref(false)
 const chooseExistingOrganization = ref(false)
+const fieldLayoutRef = ref(null)
 
-const sections = createResource({
-  url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
-  cache: ['quickEntryFields', 'CRM Deal'],
-  params: { doctype: 'CRM Deal', type: 'Quick Entry' },
-  auto: true,
-  transform: (data) => {
-    return data.forEach((section) => {
-      section.fields.forEach((field) => {
-        if (field.name == 'status') {
-          field.type = 'Select'
-          field.options = dealStatuses.value
-          field.prefix = getDealStatus(deal.status).iconColorClass
-        } else if (field.name == 'deal_owner') {
-          field.type = 'User'
+watch(
+  [chooseExistingOrganization, chooseExistingContact],
+  ([organization, contact]) => {
+    tabs.data.forEach((tab) => {
+      tab.sections.forEach((section) => {
+        if (section.name === 'organization_section') {
+          section.hidden = !organization
+        } else if (section.name === 'organization_details_section') {
+          section.hidden = organization
+        } else if (section.name === 'contact_section') {
+          section.hidden = !contact
+        } else if (section.name === 'contact_details_section') {
+          section.hidden = contact
         }
       })
     })
   },
-})
+)
 
-const filteredSections = computed(() => {
-  let allSections = sections.data || []
-  if (!allSections.length) return []
+const tabs = createResource({
+  url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
+  cache: ['QuickEntry', 'CRM Deal'],
+  params: { doctype: 'CRM Deal', type: 'Quick Entry' },
+  auto: true,
+  transform: (_tabs) => {
+    hasOrganizationSections.value = false
+    return _tabs.forEach((tab) => {
+      tab.sections.forEach((section) => {
+        section.columns.forEach((column) => {
+          if (
+            ['organization_section', 'organization_details_section'].includes(
+              section.name,
+            )
+          ) {
+            hasOrganizationSections.value = true
+          } else if (
+            ['contact_section', 'contact_details_section'].includes(
+              section.name,
+            )
+          ) {
+            hasContactSections.value = true
+          }
+          column.fields.forEach((field) => {
+            if (field.fieldname == 'status') {
+              field.fieldtype = 'Select'
+              field.options = dealStatuses.value
+              field.prefix = getDealStatus(deal.status).color
+            }
 
-  let _filteredSections = []
-
-  if (chooseExistingOrganization.value) {
-    _filteredSections.push(
-      allSections.find((s) => s.label === 'Select Organization'),
-    )
-  } else {
-    _filteredSections.push(
-      allSections.find((s) => s.label === 'Organization Details'),
-    )
-  }
-
-  if (chooseExistingContact.value) {
-    _filteredSections.push(
-      allSections.find((s) => s.label === 'Select Contact'),
-    )
-  } else {
-    _filteredSections.push(
-      allSections.find((s) => s.label === 'Contact Details'),
-    )
-  }
-
-  allSections.forEach((s) => {
-    if (
-      ![
-        'Select Organization',
-        'Organization Details',
-        'Select Contact',
-        'Contact Details',
-      ].includes(s.label)
-    ) {
-      _filteredSections.push(s)
-    }
-  })
-
-  return _filteredSections
+            if (field.fieldtype === 'Table') {
+              deal[field.fieldname] = []
+            }
+          })
+        })
+      })
+    })
+  },
 })
 
 const dealStatuses = computed(() => {
@@ -181,8 +197,9 @@ function createDeal() {
     validate() {
       error.value = null
       if (deal.annual_revenue) {
-        deal.annual_revenue = deal.annual_revenue.replace(/,/g, '')
-        if (isNaN(deal.annual_revenue)) {
+        if (typeof deal.annual_revenue === 'string') {
+          deal.annual_revenue = deal.annual_revenue.replace(/,/g, '')
+        } else if (isNaN(deal.annual_revenue)) {
           error.value = __('Annual Revenue should be a number')
           return error.value
         }

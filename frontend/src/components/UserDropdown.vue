@@ -1,5 +1,5 @@
 <template>
-  <Dropdown :options="dropdownOptions" v-bind="$attrs">
+  <Dropdown :options="dropdownItems" v-bind="$attrs">
     <template v-slot="{ open }">
       <button
         class="flex h-12 items-center rounded-md py-2 duration-300 ease-in-out"
@@ -7,23 +7,25 @@
           isCollapsed
             ? 'w-auto px-0'
             : open
-              ? 'w-52 bg-white px-2 shadow-sm'
-              : 'w-52 px-2 hover:bg-gray-200'
+              ? 'w-52 bg-surface-white px-2 shadow-sm'
+              : 'w-52 px-2 hover:bg-surface-gray-3'
         "
       >
-        <CRMLogo class="size-8 flex-shrink-0 rounded" />
+        <BrandLogo v-model="brand" class="h-8 max-w-16 flex-shrink-0" />
         <div
-          class="flex flex-1 flex-col text-left duration-300 ease-in-out"
+          class="flex flex-1 flex-col text-left duration-300 ease-in-out truncate"
           :class="
             isCollapsed
               ? 'ml-0 w-0 overflow-hidden opacity-0'
               : 'ml-2 w-auto opacity-100'
           "
         >
-          <div class="text-base font-medium leading-none text-gray-900">
-            {{ __('CRM') }}
+          <div
+            class="text-base font-medium leading-none text-ink-gray-9 truncate"
+          >
+            {{ __(brand.name || 'CRM') }}
           </div>
-          <div class="mt-1 text-sm leading-none text-gray-700">
+          <div class="mt-1 text-sm leading-none text-ink-gray-7 truncate">
             {{ user.full_name }}
           </div>
         </div>
@@ -37,24 +39,25 @@
         >
           <FeatherIcon
             name="chevron-down"
-            class="size-4 text-gray-600"
+            class="size-4 text-ink-gray-5"
             aria-hidden="true"
           />
         </div>
       </button>
     </template>
   </Dropdown>
-  <SettingsModal v-if="showSettingsModal" v-model="showSettingsModal" />
 </template>
 
 <script setup>
-import SettingsModal from '@/components/Settings/SettingsModal.vue'
-import CRMLogo from '@/components/Icons/CRMLogo.vue'
+import BrandLogo from '@/components/BrandLogo.vue'
 import Apps from '@/components/Apps.vue'
 import { sessionStore } from '@/stores/session'
 import { usersStore } from '@/stores/users'
+import { getSettings } from '@/stores/settings'
+import { showSettings, isMobileView } from '@/composables/settings'
 import { Dropdown } from 'frappe-ui'
-import { computed, ref, markRaw} from 'vue'
+import { theme, toggleTheme } from '@/stores/theme'
+import { computed, h, markRaw } from 'vue'
 
 const props = defineProps({
   isCollapsed: {
@@ -63,48 +66,102 @@ const props = defineProps({
   },
 })
 
+const { settings, brand } = getSettings()
 const { logout } = sessionStore()
 const { getUser } = usersStore()
 
 const user = computed(() => getUser() || {})
 
-const showSettingsModal = ref(false)
+const dropdownItems = computed(() => {
+  if (!settings.value?.dropdown_items) return []
 
-let dropdownOptions = ref([
-  {
-    group: 'Manage',
-    hideLabel: true,
-    items: [
-      {
+  let items = settings.value.dropdown_items
+
+  let _dropdownItems = [
+    {
+      group: 'Dropdown Items',
+      hideLabel: true,
+      items: [],
+    },
+  ]
+
+  items.forEach((item) => {
+    if (item.hidden) return
+    if (item.type !== 'Separator') {
+      _dropdownItems[_dropdownItems.length - 1].items.push(
+        dropdownItemObj(item),
+      )
+    } else {
+      _dropdownItems.push({
+        group: '',
+        hideLabel: true,
+        items: [],
+      })
+    }
+  })
+
+  return _dropdownItems
+})
+
+function dropdownItemObj(item) {
+  let _item = JSON.parse(JSON.stringify(item))
+  let icon = _item.icon || 'external-link'
+  if (typeof icon === 'string' && icon.startsWith('<svg')) {
+    icon = markRaw(h('div', { innerHTML: icon }))
+  }
+  _item.icon = icon
+
+  if (_item.is_standard) {
+    return getStandardItem(_item)
+  }
+
+  return {
+    icon: _item.icon,
+    label: __(_item.label),
+    onClick: () =>
+      window.open(_item.route, _item.open_in_new_window ? '_blank' : ''),
+  }
+}
+
+function getStandardItem(item) {
+  switch (item.name1) {
+    case 'app_selector':
+      return {
         component: markRaw(Apps),
-      },
-      {
-        icon: 'life-buoy',
-        label: computed(() => __('Support')),
-        onClick: () => window.open('https://t.me/frappecrm', '_blank'),
-      },
-      {
-        icon: 'book-open',
-        label: computed(() => __('Docs')),
-        onClick: () => window.open('https://docs.frappe.io/crm', '_blank'),
-      },
-    ],
-  },
-  {
-    group: 'Others',
-    hideLabel: true,
-    items: [
-      {
-        icon: 'settings',
-        label: computed(() => __('Settings')),
-        onClick: () => (showSettingsModal.value = true),
-      },
-      {
-        icon: 'log-out',
-        label: computed(() => __('Log out')),
+      }
+    case 'support_link':
+      return {
+        icon: item.icon,
+        label: __(item.label),
+        onClick: () =>
+          window.open(item.route, item.open_in_new_window ? '_blank' : ''),
+      }
+    case 'docs_link':
+      return {
+        icon: item.icon,
+        label: __(item.label),
+        onClick: () =>
+          window.open(item.route, item.open_in_new_window ? '_blank' : ''),
+      }
+    case 'toggle_theme':
+      return {
+        icon: theme.value === 'dark' ? 'sun' : item.icon,
+        label: __(item.label),
+        onClick: toggleTheme,
+      }
+    case 'settings':
+      return {
+        icon: item.icon,
+        label: __(item.label),
+        onClick: () => (showSettings.value = true),
+        condition: () => !isMobileView.value,
+      }
+    case 'logout':
+      return {
+        icon: item.icon,
+        label: __(item.label),
         onClick: () => logout.submit(),
-      },
-    ],
-  },
-])
+      }
+  }
+}
 </script>

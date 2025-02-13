@@ -1,16 +1,16 @@
 <template>
   <Dialog v-model="show" :options="dialogOptions">
     <template #body>
-      <div class="bg-white px-4 pb-6 pt-5 sm:px-6">
+      <div class="bg-surface-modal px-4 pb-6 pt-5 sm:px-6">
         <div class="mb-5 flex items-center justify-between">
           <div>
-            <h3 class="text-2xl font-semibold leading-6 text-gray-900">
+            <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
               {{ __(dialogOptions.title) || __('Untitled') }}
             </h3>
           </div>
           <div class="flex items-center gap-1">
             <Button
-              v-if="isManager()"
+              v-if="isManager() && !isMobileView"
               variant="ghost"
               class="w-7"
               @click="openQuickEntryModal"
@@ -22,8 +22,8 @@
             </Button>
           </div>
         </div>
-        <div v-if="sections.data">
-          <Fields :sections="sections.data" :data="_address" />
+        <div v-if="tabs.data">
+          <FieldLayout :tabs="tabs.data" :data="_address" doctype="Address" />
           <ErrorMessage class="mt-2" :message="error" />
         </div>
       </div>
@@ -50,11 +50,12 @@
 
 <script setup>
 import QuickEntryModal from '@/components/Modals/QuickEntryModal.vue'
-import Fields from '@/components/Fields.vue'
+import FieldLayout from '@/components/FieldLayout/FieldLayout.vue'
 import EditIcon from '@/components/Icons/EditIcon.vue'
 import { usersStore } from '@/stores/users'
+import { isMobileView } from '@/composables/settings'
 import { capture } from '@/telemetry'
-import { call, FeatherIcon, createResource, ErrorMessage } from 'frappe-ui'
+import { FeatherIcon, createResource, ErrorMessage } from 'frappe-ui'
 import { ref, nextTick, watch, computed } from 'vue'
 
 const props = defineProps({
@@ -106,9 +107,9 @@ const dialogOptions = computed(() => {
   return { title, size, actions }
 })
 
-const sections = createResource({
+const tabs = createResource({
   url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
-  cache: ['quickEntryFields', 'Address'],
+  cache: ['QuickEntry', 'Address'],
   params: { doctype: 'Address', type: 'Quick Entry' },
   auto: true,
 })

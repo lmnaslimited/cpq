@@ -8,179 +8,123 @@
       </Breadcrumbs>
     </template>
   </LayoutHeader>
-  <div v-if="organization.doc" class="flex flex-1 flex-col overflow-hidden">
-    <FileUploader
-      @success="changeOrganizationImage"
-      :validateFile="validateFile"
+  <div ref="parentRef" class="flex h-full">
+    <Resizer
+      v-if="organization.doc"
+      :parent="$refs.parentRef"
+      class="flex h-full flex-col overflow-hidden border-r"
     >
-      <template #default="{ openFileSelector, error }">
-        <div class="flex items-start justify-start gap-6 p-5 sm:items-center">
-          <div class="group relative h-24 w-24">
-            <Avatar
-              size="3xl"
-              :image="organization.doc.organization_logo"
-              :label="organization.doc.name"
-              class="!h-24 !w-24"
-            />
-            <component
-              :is="organization.doc.organization_logo ? Dropdown : 'div'"
-              v-bind="
-                organization.doc.organization_logo
-                  ? {
-                      options: [
-                        {
-                          icon: 'upload',
-                          label: organization.doc.organization_logo
-                            ? __('Change image')
-                            : __('Upload image'),
-                          onClick: openFileSelector,
-                        },
-                        {
-                          icon: 'trash-2',
-                          label: __('Remove image'),
-                          onClick: () => changeOrganizationImage(''),
-                        },
-                      ],
-                    }
-                  : { onClick: openFileSelector }
-              "
-              class="!absolute bottom-0 left-0 right-0"
-            >
-              <div
-                class="z-1 absolute bottom-0 left-0 right-0 flex h-13 cursor-pointer items-center justify-center rounded-b-full bg-black bg-opacity-40 pt-3 opacity-0 duration-300 ease-in-out group-hover:opacity-100"
-                style="
-                  -webkit-clip-path: inset(12px 0 0 0);
-                  clip-path: inset(12px 0 0 0);
-                "
-              >
-                <CameraIcon class="h-6 w-6 cursor-pointer text-white" />
+      <div class="border-b">
+        <FileUploader
+          @success="changeOrganizationImage"
+          :validateFile="validateFile"
+        >
+          <template #default="{ openFileSelector, error }">
+            <div class="flex flex-col items-start justify-start gap-4 p-5">
+              <div class="flex gap-4 items-center">
+                <div class="group relative h-15.5 w-15.5">
+                  <Avatar
+                    size="3xl"
+                    class="h-15.5 w-15.5"
+                    :label="organization.doc.organization_name"
+                    :image="organization.doc.organization_logo"
+                  />
+                  <component
+                    :is="organization.doc.image ? Dropdown : 'div'"
+                    v-bind="
+                      organization.doc.image
+                        ? {
+                            options: [
+                              {
+                                icon: 'upload',
+                                label: organization.doc.image
+                                  ? __('Change image')
+                                  : __('Upload image'),
+                                onClick: openFileSelector,
+                              },
+                              {
+                                icon: 'trash-2',
+                                label: __('Remove image'),
+                                onClick: () => changeOrganizationImage(''),
+                              },
+                            ],
+                          }
+                        : { onClick: openFileSelector }
+                    "
+                    class="!absolute bottom-0 left-0 right-0"
+                  >
+                    <div
+                      class="z-1 absolute bottom-0 left-0 right-0 flex h-14 cursor-pointer items-center justify-center rounded-b-full bg-black bg-opacity-40 pt-5 opacity-0 duration-300 ease-in-out group-hover:opacity-100"
+                      style="
+                        -webkit-clip-path: inset(22px 0 0 0);
+                        clip-path: inset(22px 0 0 0);
+                      "
+                    >
+                      <CameraIcon class="h-6 w-6 cursor-pointer text-white" />
+                    </div>
+                  </component>
+                </div>
+                <div class="flex flex-col gap-2 truncate">
+                  <div class="truncate text-2xl font-medium text-ink-gray-9">
+                    <span>{{ organization.doc.name }}</span>
+                  </div>
+                  <div
+                    v-if="organization.doc.website"
+                    class="flex items-center gap-1.5 text-base text-ink-gray-8"
+                  >
+                    <WebsiteIcon class="size-4" />
+                    <span>{{ website(organization.doc.website) }}</span>
+                  </div>
+                  <ErrorMessage :message="__(error)" />
+                </div>
               </div>
-            </component>
-          </div>
-          <div class="flex flex-col justify-center gap-2 sm:gap-0.5">
-            <div class="text-3xl font-semibold text-gray-900">
-              {{ organization.doc.name }}
+              <div class="flex gap-1.5">
+                <Button
+                  :label="__('Delete')"
+                  theme="red"
+                  size="sm"
+                  @click="deleteOrganization"
+                >
+                  <template #prefix>
+                    <FeatherIcon name="trash-2" class="h-4 w-4" />
+                  </template>
+                </Button>
+                <Tooltip :text="__('Open website')">
+                  <div>
+                    <Button @click="openWebsite">
+                      <FeatherIcon name="link" class="h-4 w-4" />
+                    </Button>
+                  </div>
+                </Tooltip>
+              </div>
             </div>
-            <div
-              class="flex flex-col flex-wrap gap-3 text-base text-gray-700 sm:flex-row sm:items-center sm:gap-2"
-            >
-              <div
-                v-if="organization.doc.website"
-                class="flex items-center gap-1.5"
-              >
-                <WebsiteIcon class="h-4 w-4" />
-                <span class="">{{ website(organization.doc.website) }}</span>
-              </div>
-              <span
-                v-if="organization.doc.website"
-                class="hidden text-3xl leading-[0] text-gray-600 sm:flex"
-              >
-                &middot;
-              </span>
-              <div
-                v-if="organization.doc.industry"
-                class="flex items-center gap-1.5"
-              >
-                <FeatherIcon name="briefcase" class="h-4 w-4" />
-                <span class="">{{ organization.doc.industry }}</span>
-              </div>
-              <span
-                v-if="organization.doc.industry"
-                class="hidden text-3xl leading-[0] text-gray-600 sm:flex"
-              >
-                &middot;
-              </span>
-              <div
-                v-if="organization.doc.territory"
-                class="flex items-center gap-1.5"
-              >
-                <TerritoryIcon class="h-4 w-4" />
-                <span class="">{{ organization.doc.territory }}</span>
-              </div>
-              <span
-                v-if="organization.doc.territory"
-                class="hidden text-3xl leading-[0] text-gray-600 sm:flex"
-              >
-                &middot;
-              </span>
-              <div
-                v-if="organization.doc.annual_revenue"
-                class="flex items-center gap-1.5"
-              >
-                <MoneyIcon class="size-4" />
-                <span class="">{{
-                  formatNumberIntoCurrency(
-                    organization.doc.annual_revenue,
-                    organization.doc.currency,
-                  )
-                }}</span>
-              </div>
-              <span
-                v-if="organization.doc.annual_revenue"
-                class="hidden text-3xl leading-[0] text-gray-600 sm:flex"
-              >
-                &middot;
-              </span>
-              <Button
-                v-if="
-                  organization.doc.website ||
-                  organization.doc.industry ||
-                  organization.doc.territory ||
-                  organization.doc.annual_revenue
-                "
-                variant="ghost"
-                :label="__('More')"
-                class="w-fit cursor-pointer hover:text-gray-900 sm:-ml-1"
-                @click="
-                  () => {
-                    detailMode = true
-                    showOrganizationModal = true
-                  }
-                "
-              />
-            </div>
-            <div class="mt-2 flex gap-1.5">
-              <Button
-                :label="__('Edit')"
-                size="sm"
-                @click="
-                  () => {
-                    detailMode = false
-                    showOrganizationModal = true
-                  }
-                "
-              >
-                <template #prefix>
-                  <EditIcon class="h-4 w-4" />
-                </template>
-              </Button>
-              <Button
-                :label="__('Delete')"
-                theme="red"
-                size="sm"
-                @click="deleteOrganization"
-              >
-                <template #prefix>
-                  <FeatherIcon name="trash-2" class="h-4 w-4" />
-                </template>
-              </Button>
-            </div>
-            <ErrorMessage class="mt-2" :message="__(error)" />
-          </div>
-        </div>
-      </template>
-    </FileUploader>
-    <Tabs v-model="tabIndex" :tabs="tabs">
-      <template #tab="{ tab, selected }">
+          </template>
+        </FileUploader>
+      </div>
+      <div
+        v-if="sections.data"
+        class="flex flex-1 flex-col justify-between overflow-hidden"
+      >
+        <SidePanelLayout
+          v-model="organization.doc"
+          :sections="sections.data"
+          doctype="CRM Organization"
+          @update="updateField"
+          @reload="sections.reload"
+        />
+      </div>
+    </Resizer>
+    <Tabs as="div" v-model="tabIndex" :tabs="tabs">
+      <template #tab-item="{ tab, selected }">
         <button
-          class="group flex items-center gap-2 border-b border-transparent py-2.5 text-base text-gray-600 duration-300 ease-in-out hover:border-gray-400 hover:text-gray-900"
-          :class="{ 'text-gray-900': selected }"
+          class="group flex items-center gap-2 border-b border-transparent py-2.5 text-base text-ink-gray-5 duration-300 ease-in-out hover:border-outline-gray-3 hover:text-ink-gray-9"
+          :class="{ 'text-ink-gray-9': selected }"
         >
           <component v-if="tab.icon" :is="tab.icon" class="h-5" />
           {{ __(tab.label) }}
           <Badge
-            class="group-hover:bg-gray-900"
-            :class="[selected ? 'bg-gray-900' : 'bg-gray-600']"
+            class="group-hover:bg-surface-gray-7"
+            :class="[selected ? 'bg-surface-gray-7' : 'bg-gray-600']"
             variant="solid"
             theme="gray"
             size="sm"
@@ -189,7 +133,7 @@
           </Badge>
         </button>
       </template>
-      <template #default="{ tab }">
+      <template #tab-panel="{ tab }">
         <DealsListView
           class="mt-4"
           v-if="tab.label === 'Deals' && rows.length"
@@ -206,7 +150,7 @@
         />
         <div
           v-if="!rows.length"
-          class="grid flex-1 place-items-center text-xl font-medium text-gray-500"
+          class="grid flex-1 place-items-center text-xl font-medium text-ink-gray-4"
         >
           <div class="flex flex-col items-center justify-center space-y-3">
             <component :is="tab.icon" class="!h-10 !w-10" />
@@ -216,44 +160,36 @@
       </template>
     </Tabs>
   </div>
-  <OrganizationModal
-    v-model="showOrganizationModal"
-    v-model:quickEntry="showQuickEntryModal"
-    v-model:organization="organization"
-    :options="{ detailMode }"
-  />
   <QuickEntryModal
     v-if="showQuickEntryModal"
     v-model="showQuickEntryModal"
     doctype="CRM Organization"
   />
+  <AddressModal v-model="showAddressModal" v-model:address="_address" />
 </template>
 
 <script setup>
+import Resizer from '@/components/Resizer.vue'
+import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import Icon from '@/components/Icon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
-import OrganizationModal from '@/components/Modals/OrganizationModal.vue'
 import QuickEntryModal from '@/components/Modals/QuickEntryModal.vue'
+import AddressModal from '@/components/Modals/AddressModal.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import ContactsListView from '@/components/ListViews/ContactsListView.vue'
 import WebsiteIcon from '@/components/Icons/WebsiteIcon.vue'
-import TerritoryIcon from '@/components/Icons/TerritoryIcon.vue'
-import MoneyIcon from '@/components/Icons/MoneyIcon.vue'
-import EditIcon from '@/components/Icons/EditIcon.vue'
 import CameraIcon from '@/components/Icons/CameraIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
+import { getSettings } from '@/stores/settings'
+import { getMeta } from '@/stores/meta'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
 import { getView } from '@/utils/view'
+import { formatDate, timeAgo, createToast } from '@/utils'
 import {
-  dateFormat,
-  dateTooltipFormat,
-  timeAgo,
-  formatNumberIntoCurrency,
-} from '@/utils'
-import {
+  Tooltip,
   Breadcrumbs,
   Avatar,
   FileUploader,
@@ -263,6 +199,7 @@ import {
   createListResource,
   createDocumentResource,
   usePageMeta,
+  createResource,
 } from 'frappe-ui'
 import { h, computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -274,11 +211,11 @@ const props = defineProps({
   },
 })
 
+const { brand } = getSettings()
+const { getUser } = usersStore()
 const { $dialog } = globalStore()
 const { getDealStatus } = statusesStore()
-const showOrganizationModal = ref(false)
 const showQuickEntryModal = ref(false)
-const detailMode = ref(false)
 
 const route = useRoute()
 const router = useRouter()
@@ -290,6 +227,17 @@ const organization = createDocumentResource({
   fields: ['*'],
   auto: true,
 })
+
+async function updateField(fieldname, value) {
+  await organization.setValue.submit({
+    [fieldname]: value,
+  })
+  createToast({
+    title: __('Organization updated'),
+    icon: 'check',
+    iconClasses: 'text-ink-green-3',
+  })
+}
 
 const breadcrumbs = computed(() => {
   let items = [{ label: __('Organizations'), route: { name: 'Organizations' } }]
@@ -326,6 +274,7 @@ const breadcrumbs = computed(() => {
 usePageMeta(() => {
   return {
     title: props.organizationId,
+    icon: brand.favicon,
   }
 })
 
@@ -372,6 +321,59 @@ function website(url) {
   return url && url.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '')
 }
 
+function openWebsite() {
+  if (!organization.doc.website)
+    createToast({
+      title: __('Website not found'),
+      icon: 'x',
+      iconClasses: 'text-ink-red-4',
+    })
+  else window.open(organization.doc.website, '_blank')
+}
+
+const showAddressModal = ref(false)
+const _organization = ref({})
+const _address = ref({})
+
+const sections = createResource({
+  url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_sidepanel_sections',
+  cache: ['sidePanelSections', 'CRM Organization'],
+  params: { doctype: 'CRM Organization' },
+  auto: true,
+  transform: (data) => getParsedSections(data),
+})
+
+function getParsedSections(_sections) {
+  return _sections.map((section) => {
+    section.columns = section.columns.map((column) => {
+      column.fields = column.fields.map((field) => {
+        if (field.fieldname === 'address') {
+          return {
+            ...field,
+            create: (value, close) => {
+              _organization.value.address = value
+              _address.value = {}
+              showAddressModal.value = true
+              close()
+            },
+            edit: async (addr) => {
+              _address.value = await call('frappe.client.get', {
+                doctype: 'Address',
+                name: addr,
+              })
+              showAddressModal.value = true
+            },
+          }
+        } else {
+          return field
+        }
+      })
+      return column
+    })
+    return section
+  })
+}
+
 const tabIndex = ref(0)
 const tabs = [
   {
@@ -385,8 +387,6 @@ const tabs = [
     count: computed(() => contacts.data?.length),
   },
 ]
-
-const { getUser } = usersStore()
 
 const deals = createListResource({
   type: 'list',
@@ -443,6 +443,8 @@ const rows = computed(() => {
   })
 })
 
+const { getFormattedCurrency } = getMeta('CRM Deal')
+
 const columns = computed(() => {
   return tabIndex.value === 0 ? dealColumns : contactColumns
 })
@@ -452,15 +454,12 @@ function getDealRowObject(deal) {
     name: deal.name,
     organization: {
       label: deal.organization,
-      logo: props.organization?.organization_logo,
+      logo: organization.doc?.organization_logo,
     },
-    annual_revenue: formatNumberIntoCurrency(
-      deal.annual_revenue,
-      deal.currency,
-    ),
+    annual_revenue: getFormattedCurrency('annual_revenue', deal),
     status: {
       label: deal.status,
-      color: getDealStatus(deal.status)?.iconColorClass,
+      color: getDealStatus(deal.status)?.color,
     },
     email: deal.email,
     mobile_no: deal.mobile_no,
@@ -469,7 +468,7 @@ function getDealRowObject(deal) {
       ...(deal.deal_owner && getUser(deal.deal_owner)),
     },
     modified: {
-      label: dateFormat(deal.modified, dateTooltipFormat),
+      label: formatDate(deal.modified),
       timeAgo: __(timeAgo(deal.modified)),
     },
   }
@@ -487,10 +486,10 @@ function getContactRowObject(contact) {
     mobile_no: contact.mobile_no,
     company_name: {
       label: contact.company_name,
-      logo: props.organization?.organization_logo,
+      logo: organization.doc?.organization_logo,
     },
     modified: {
-      label: dateFormat(contact.modified, dateTooltipFormat),
+      label: formatDate(contact.modified),
       timeAgo: __(timeAgo(contact.modified)),
     },
   }
@@ -505,6 +504,7 @@ const dealColumns = [
   {
     label: __('Amount'),
     key: 'annual_revenue',
+    align: 'right',
     width: '9rem',
   },
   {

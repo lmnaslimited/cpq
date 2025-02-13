@@ -2,6 +2,7 @@
   <ActivityHeader
     v-model="tabIndex"
     v-model:showWhatsappTemplates="showWhatsappTemplates"
+    v-model:showFilesUploader="showFilesUploader"
     :tabs="tabs"
     :title="title"
     :doc="doc"
@@ -15,7 +16,7 @@
   >
     <div
       v-if="all_activities?.loading"
-      class="flex flex-1 flex-col items-center justify-center gap-3 text-xl font-medium text-gray-500"
+      class="flex flex-1 flex-col items-center justify-center gap-3 text-xl font-medium text-ink-gray-4"
     >
       <LoadingIndicator class="h-6 w-6" />
       <span>{{ __('Loading...') }}</span>
@@ -49,30 +50,21 @@
             class="activity grid grid-cols-[30px_minmax(auto,_1fr)] gap-2 px-3 sm:gap-4 sm:px-10"
           >
             <div
-              class="relative flex justify-center after:absolute after:left-[50%] after:top-0 after:-z-10 after:border-l after:border-gray-200"
+              class="relative flex justify-center after:absolute after:left-[50%] after:top-0 after:-z-10 after:border-l after:border-outline-gray-modals"
               :class="i != activities.length - 1 ? 'after:h-full' : 'after:h-4'"
             >
               <div
-                class="z-10 flex h-8 w-7 items-center justify-center bg-white"
+                class="z-10 flex h-8 w-7 items-center justify-center bg-surface-white"
               >
-                <CommentIcon class="text-gray-800" />
+                <CommentIcon class="text-ink-gray-8" />
               </div>
             </div>
             <CommentArea class="mb-4" :activity="comment" />
           </div>
         </div>
       </div>
-      <div
-        v-else-if="title == 'Tasks'"
-        class="px-3 pb-3 sm:px-10 sm:pb-5 overflow-x-auto sm:w-full w-max"
-      >
-        <TaskArea
-          v-model="all_activities"
-          v-model:doc="doc"
-          :modalRef="modalRef"
-          :tasks="activities"
-          :doctype="doctype"
-        />
+      <div v-else-if="title == 'Tasks'" class="px-3 pb-3 sm:px-10 sm:pb-5">
+        <TaskArea :modalRef="modalRef" :tasks="activities" :doctype="doctype" />
       </div>
       <div v-else-if="title == 'Calls'" class="activity">
         <div v-for="(call, i) in activities">
@@ -80,15 +72,15 @@
             class="activity grid grid-cols-[30px_minmax(auto,_1fr)] gap-4 px-3 sm:px-10"
           >
             <div
-              class="relative flex justify-center after:absolute after:left-[50%] after:top-0 after:-z-10 after:border-l after:border-gray-200"
+              class="relative flex justify-center after:absolute after:left-[50%] after:top-0 after:-z-10 after:border-l after:border-outline-gray-modals"
               :class="i != activities.length - 1 ? 'after:h-full' : 'after:h-4'"
             >
               <div
-                class="z-10 flex h-8 w-7 items-center justify-center bg-white text-gray-800"
+                class="z-10 flex h-8 w-7 items-center justify-center bg-surface-white text-ink-gray-8"
               >
                 <MissedCallIcon
                   v-if="call.status == 'No Answer'"
-                  class="text-red-600"
+                  class="text-ink-red-4"
                 />
                 <DeclinedCallIcon v-else-if="call.status == 'Busy'" />
                 <component
@@ -104,6 +96,15 @@
         </div>
       </div>
       <div
+        v-else-if="title == 'Attachments'"
+        class="px-3 pb-3 sm:px-10 sm:pb-5"
+      >
+        <AttachmentArea
+          :attachments="activities"
+          @reload="all_activities.reload() && scroll()"
+        />
+      </div>
+      <div
         v-else
         v-for="(activity, i) in activities"
         class="activity px-3 sm:px-10"
@@ -115,14 +116,14 @@
       >
         <div
           v-if="['Activity', 'Emails'].includes(title)"
-          class="relative flex justify-center before:absolute before:left-[50%] before:top-0 before:-z-10 before:border-l before:border-gray-200"
+          class="relative flex justify-center before:absolute before:left-[50%] before:top-0 before:-z-10 before:border-l before:border-outline-gray-modals"
           :class="[i != activities.length - 1 ? 'before:h-full' : 'before:h-4']"
         >
           <div
-            class="z-10 flex h-7 w-7 items-center justify-center bg-white"
+            class="z-10 flex h-7 w-7 items-center justify-center bg-surface-white"
             :class="{
               'mt-2.5': ['communication'].includes(activity.activity_type),
-              'bg-white': ['added', 'removed', 'changed'].includes(
+              'bg-surface-white': ['added', 'removed', 'changed'].includes(
                 activity.activity_type,
               ),
               'h-8': [
@@ -144,7 +145,7 @@
                   activity.activity_type,
                 ) && activity.status == 'No Answer'
               "
-              class="text-red-600"
+              class="text-ink-red-4"
             />
             <DeclinedCallIcon
               v-else-if="
@@ -158,8 +159,8 @@
               :is="activity.icon"
               :class="
                 ['added', 'removed', 'changed'].includes(activity.activity_type)
-                  ? 'text-gray-500'
-                  : 'text-gray-800'
+                  ? 'text-ink-gray-4'
+                  : 'text-ink-gray-8'
               "
             />
           </div>
@@ -178,6 +179,40 @@
           <CommentArea :activity="activity" />
         </div>
         <div
+          class="mb-4 flex flex-col gap-2 py-1.5"
+          :id="activity.name"
+          v-else-if="activity.activity_type == 'attachment_log'"
+        >
+          <div class="flex items-center justify-stretch gap-2 text-base">
+            <div
+              class="inline-flex items-center flex-wrap gap-1.5 text-ink-gray-8 font-medium"
+            >
+              <span class="font-medium">{{ activity.owner_name }}</span>
+              <span class="text-ink-gray-5">{{ __(activity.data.type) }}</span>
+              <a
+                v-if="activity.data.file_url"
+                :href="activity.data.file_url"
+                target="_blank"
+              >
+                <span>{{ activity.data.file_name }}</span>
+              </a>
+              <span v-else>{{ activity.data.file_name }}</span>
+              <FeatherIcon
+                v-if="activity.data.is_private"
+                name="lock"
+                class="size-3"
+              />
+            </div>
+            <div class="ml-auto whitespace-nowrap">
+              <Tooltip :text="formatDate(activity.creation)">
+                <div class="text-sm text-ink-gray-5">
+                  {{ __(timeAgo(activity.creation)) }}
+                </div>
+              </Tooltip>
+            </div>
+          </div>
+        </div>
+        <div
           v-else-if="
             activity.activity_type == 'incoming_call' ||
             activity.activity_type == 'outgoing_call'
@@ -190,7 +225,7 @@
           <div class="flex items-center justify-stretch gap-2 text-base">
             <div
               v-if="activity.other_versions"
-              class="inline-flex flex-wrap gap-1.5 text-gray-800 font-medium"
+              class="inline-flex flex-wrap gap-1.5 text-ink-gray-8 font-medium"
             >
               <span>{{ activity.show_others ? __('Hide') : __('Show') }}</span>
               <span> +{{ activity.other_versions.length + 1 }} </span>
@@ -208,22 +243,22 @@
             </div>
             <div
               v-else
-              class="inline-flex items-center flex-wrap gap-1 text-gray-600"
+              class="inline-flex items-center flex-wrap gap-1 text-ink-gray-5"
             >
-              <span class="font-medium text-gray-800">
+              <span class="font-medium text-ink-gray-8">
                 {{ activity.owner_name }}
               </span>
               <span v-if="activity.type">{{ __(activity.type) }}</span>
               <span
                 v-if="activity.data.field_label"
-                class="max-w-xs truncate font-medium text-gray-800"
+                class="max-w-xs truncate font-medium text-ink-gray-8"
               >
                 {{ __(activity.data.field_label) }}
               </span>
               <span v-if="activity.value">{{ __(activity.value) }}</span>
               <span
                 v-if="activity.data.old_value"
-                class="max-w-xs font-medium text-gray-800"
+                class="max-w-xs font-medium text-ink-gray-8"
               >
                 <div
                   class="flex items-center gap-1"
@@ -239,7 +274,7 @@
               <span v-if="activity.to">{{ __('to') }}</span>
               <span
                 v-if="activity.data.value"
-                class="max-w-xs font-medium text-gray-800"
+                class="max-w-xs font-medium text-ink-gray-8"
               >
                 <div
                   class="flex items-center gap-1"
@@ -255,8 +290,8 @@
             </div>
 
             <div class="ml-auto whitespace-nowrap">
-              <Tooltip :text="dateFormat(activity.creation, dateTooltipFormat)">
-                <div class="text-sm text-gray-600">
+              <Tooltip :text="formatDate(activity.creation)">
+                <div class="text-sm text-ink-gray-5">
                   {{ __(timeAgo(activity.creation)) }}
                 </div>
               </Tooltip>
@@ -270,23 +305,23 @@
               v-for="activity in [activity, ...activity.other_versions]"
               class="flex items-start justify-stretch gap-2 py-1.5 text-base"
             >
-              <div class="inline-flex flex-wrap gap-1 text-gray-600">
+              <div class="inline-flex flex-wrap gap-1 text-ink-gray-5">
                 <span
                   v-if="activity.data.field_label"
-                  class="max-w-xs truncate text-gray-600"
+                  class="max-w-xs truncate text-ink-gray-5"
                 >
                   {{ __(activity.data.field_label) }}
                 </span>
                 <FeatherIcon
                   name="arrow-right"
-                  class="mx-1 h-4 w-4 text-gray-600"
+                  class="mx-1 h-4 w-4 text-ink-gray-5"
                 />
                 <span v-if="activity.type">
                   {{ startCase(__(activity.type)) }}
                 </span>
                 <span
                   v-if="activity.data.old_value"
-                  class="max-w-xs font-medium text-gray-800"
+                  class="max-w-xs font-medium text-ink-gray-8"
                 >
                   <div
                     class="flex items-center gap-1"
@@ -302,7 +337,7 @@
                 <span v-if="activity.to">{{ __('to') }}</span>
                 <span
                   v-if="activity.data.value"
-                  class="max-w-xs font-medium text-gray-800"
+                  class="max-w-xs font-medium text-ink-gray-8"
                 >
                   <div
                     class="flex items-center gap-1"
@@ -318,10 +353,8 @@
               </div>
 
               <div class="ml-auto whitespace-nowrap">
-                <Tooltip
-                  :text="dateFormat(activity.creation, dateTooltipFormat)"
-                >
-                  <div class="text-sm text-gray-600">
+                <Tooltip :text="formatDate(activity.creation)">
+                  <div class="text-sm text-ink-gray-5">
                     {{ __(timeAgo(activity.creation)) }}
                   </div>
                 </Tooltip>
@@ -331,9 +364,12 @@
         </div>
       </div>
     </div>
+    <div v-else-if="title == 'Data'" class="h-full flex flex-col px-3 sm:px-10">
+      <DataFields :doctype="doctype" :docname="doc.data.name" />
+    </div>
     <div
       v-else
-      class="flex flex-1 flex-col items-center justify-center gap-3 text-xl font-medium text-gray-500"
+      class="flex flex-1 flex-col items-center justify-center gap-3 text-xl font-medium text-ink-gray-4"
     >
       <component :is="emptyTextIcon" class="h-10 w-10" />
       <span>{{ __(emptyText) }}</span>
@@ -361,6 +397,11 @@
         v-else-if="title == 'Tasks'"
         :label="__('Create Task')"
         @click="modalRef.showTask()"
+      />
+      <Button
+        v-else-if="title == 'Attachments'"
+        :label="__('Upload Attachment')"
+        @click="showFilesUploader = true"
       />
     </div>
   </FadedScrollableDiv>
@@ -395,6 +436,18 @@
     :doctype="doctype"
     :doc="doc"
   />
+  <FilesUploader
+    v-if="doc.data?.name"
+    v-model="showFilesUploader"
+    :doctype="doctype"
+    :docname="doc.data.name"
+    @after="
+      () => {
+        all_activities.reload()
+        changeTabTo('attachments')
+      }
+    "
+  />
 </template>
 <script setup>
 import ActivityHeader from '@/components/Activities/ActivityHeader.vue'
@@ -403,12 +456,16 @@ import CommentArea from '@/components/Activities/CommentArea.vue'
 import CallArea from '@/components/Activities/CallArea.vue'
 import NoteArea from '@/components/Activities/NoteArea.vue'
 import TaskArea from '@/components/Activities/TaskArea.vue'
+import AttachmentArea from '@/components/Activities/AttachmentArea.vue'
+import DataFields from '@/components/Activities/DataFields.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
 import Email2Icon from '@/components/Icons/Email2Icon.vue'
+import DetailsIcon from '@/components/Icons/DetailsIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
 import TaskIcon from '@/components/Icons/TaskIcon.vue'
+import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import WhatsAppArea from '@/components/Activities/WhatsAppArea.vue'
 import WhatsAppBox from '@/components/Activities/WhatsAppBox.vue'
@@ -426,13 +483,8 @@ import FadedScrollableDiv from '@/components/FadedScrollableDiv.vue'
 import CommunicationArea from '@/components/CommunicationArea.vue'
 import WhatsappTemplateSelectorModal from '@/components/Modals/WhatsappTemplateSelectorModal.vue'
 import AllModals from '@/components/Activities/AllModals.vue'
-import {
-  timeAgo,
-  dateFormat,
-  dateTooltipFormat,
-  secondsToDuration,
-  startCase,
-} from '@/utils'
+import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
+import { timeAgo, formatDate, startCase } from '@/utils'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
 import { contactsStore } from '@/stores/contacts'
@@ -475,50 +527,24 @@ const tabIndex = defineModel('tabIndex')
 
 const reload_email = ref(false)
 const modalRef = ref(null)
+const showFilesUploader = ref(false)
 
 const title = computed(() => props.tabs?.[tabIndex.value]?.name || 'Activity')
+
+const changeTabTo = (tabName) => {
+  const tabNames = props.tabs?.map((tab) => tab.name?.toLowerCase())
+  const index = tabNames?.indexOf(tabName)
+  if (index == -1) return
+  tabIndex.value = index
+}
 
 const all_activities = createResource({
   url: 'crm.api.activities.get_activities',
   params: { name: doc.value.data.name },
   cache: ['activity', doc.value.data.name],
   auto: true,
-  transform: ([versions, calls, notes, tasks]) => {
-    if (calls?.length) {
-      calls.forEach((doc) => {
-        doc.show_recording = false
-        doc.activity_type =
-          doc.type === 'Incoming' ? 'incoming_call' : 'outgoing_call'
-        doc.duration = secondsToDuration(doc.duration)
-        if (doc.type === 'Incoming') {
-          doc.caller = {
-            label:
-              getContact(doc.from)?.full_name ||
-              getLeadContact(doc.from)?.full_name ||
-              'Unknown',
-            image:
-              getContact(doc.from)?.image || getLeadContact(doc.from)?.image,
-          }
-          doc.receiver = {
-            label: getUser(doc.receiver).full_name,
-            image: getUser(doc.receiver).user_image,
-          }
-        } else {
-          doc.caller = {
-            label: getUser(doc.caller).full_name,
-            image: getUser(doc.caller).user_image,
-          }
-          doc.receiver = {
-            label:
-              getContact(doc.to)?.full_name ||
-              getLeadContact(doc.to)?.full_name ||
-              'Unknown',
-            image: getContact(doc.to)?.image || getLeadContact(doc.to)?.image,
-          }
-        }
-      })
-    }
-    return { versions, calls, notes, tasks }
+  transform: ([versions, calls, notes, tasks, attachments]) => {
+    return { versions, calls, notes, tasks, attachments }
   },
 })
 
@@ -584,17 +610,17 @@ function get_activities() {
 }
 
 const activities = computed(() => {
-  let activities = []
+  let _activities = []
   if (title.value == 'Activity') {
-    activities = get_activities()
+    _activities = get_activities()
   } else if (title.value == 'Emails') {
     if (!all_activities.data?.versions) return []
-    activities = all_activities.data.versions.filter(
+    _activities = all_activities.data.versions.filter(
       (activity) => activity.activity_type === 'communication',
     )
   } else if (title.value == 'Comments') {
     if (!all_activities.data?.versions) return []
-    activities = all_activities.data.versions.filter(
+    _activities = all_activities.data.versions.filter(
       (activity) => activity.activity_type === 'comment',
     )
   } else if (title.value == 'Calls') {
@@ -602,13 +628,16 @@ const activities = computed(() => {
     return sortByCreation(all_activities.data.calls)
   } else if (title.value == 'Tasks') {
     if (!all_activities.data?.tasks) return []
-    return sortByCreation(all_activities.data.tasks)
+    return sortByModified(all_activities.data.tasks)
   } else if (title.value == 'Notes') {
     if (!all_activities.data?.notes) return []
-    return sortByCreation(all_activities.data.notes)
+    return sortByModified(all_activities.data.notes)
+  } else if (title.value == 'Attachments') {
+    if (!all_activities.data?.attachments) return []
+    return sortByModified(all_activities.data.attachments)
   }
 
-  activities.forEach((activity) => {
+  _activities.forEach((activity) => {
     activity.icon = timelineIcon(activity.activity_type, activity.is_lead)
 
     if (
@@ -627,11 +656,14 @@ const activities = computed(() => {
       })
     }
   })
-  return sortByCreation(activities)
+  return sortByCreation(_activities)
 })
 
 function sortByCreation(list) {
   return list.sort((a, b) => new Date(a.creation) - new Date(b.creation))
+}
+function sortByModified(list) {
+  return list.sort((b, a) => new Date(a.modified) - new Date(b.modified))
 }
 
 function update_activities_details(activity) {
@@ -661,12 +693,16 @@ const emptyText = computed(() => {
     text = 'No Email Communications'
   } else if (title.value == 'Comments') {
     text = 'No Comments'
+  } else if (title.value == 'Data') {
+    text = 'No Data'
   } else if (title.value == 'Calls') {
     text = 'No Call Logs'
   } else if (title.value == 'Notes') {
     text = 'No Notes'
   } else if (title.value == 'Tasks') {
     text = 'No Tasks'
+  } else if (title.value == 'Attachments') {
+    text = 'No Attachments'
   } else if (title.value == 'WhatsApp') {
     text = 'No WhatsApp Messages'
   }
@@ -679,16 +715,20 @@ const emptyTextIcon = computed(() => {
     icon = Email2Icon
   } else if (title.value == 'Comments') {
     icon = CommentIcon
+  } else if (title.value == 'Data') {
+    icon = DetailsIcon
   } else if (title.value == 'Calls') {
     icon = PhoneIcon
   } else if (title.value == 'Notes') {
     icon = NoteIcon
   } else if (title.value == 'Tasks') {
     icon = TaskIcon
+  } else if (title.value == 'Attachments') {
+    icon = AttachmentIcon
   } else if (title.value == 'WhatsApp') {
     icon = WhatsAppIcon
   }
-  return h(icon, { class: 'text-gray-500' })
+  return h(icon, { class: 'text-ink-gray-4' })
 })
 
 function timelineIcon(activity_type, is_lead) {
@@ -708,6 +748,9 @@ function timelineIcon(activity_type, is_lead) {
       break
     case 'outgoing_call':
       icon = OutboundCallIcon
+      break
+    case 'attachment_log':
+      icon = AttachmentIcon
       break
     default:
       icon = DotIcon
@@ -744,5 +787,5 @@ function scroll(hash) {
   }, 500)
 }
 
-defineExpose({ emailBox })
+defineExpose({ emailBox, all_activities })
 </script>

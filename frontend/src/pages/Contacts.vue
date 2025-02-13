@@ -50,7 +50,7 @@
     class="flex h-full items-center justify-center"
   >
     <div
-      class="flex flex-col items-center gap-3 text-xl font-medium text-gray-500"
+      class="flex flex-col items-center gap-3 text-xl font-medium text-ink-gray-4"
     >
       <ContactsIcon class="h-10 w-10" />
       <span>{{ __('No {0} Found', [__('Contacts')]) }}</span>
@@ -61,14 +61,16 @@
   </div>
   <ContactModal
     v-model="showContactModal"
-    v-model:quickEntry="showQuickEntryModal"
+    v-model:showQuickEntryModal="showQuickEntryModal"
     :contact="{}"
+    @openAddressModal="(_address) => openAddressModal(_address)"
   />
   <QuickEntryModal
     v-if="showQuickEntryModal"
     v-model="showQuickEntryModal"
     doctype="Contact"
   />
+  <AddressModal v-model="showAddressModal" v-model:address="address" />
 </template>
 
 <script setup>
@@ -78,21 +80,28 @@ import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import ContactModal from '@/components/Modals/ContactModal.vue'
 import QuickEntryModal from '@/components/Modals/QuickEntryModal.vue'
+import AddressModal from '@/components/Modals/AddressModal.vue'
 import ContactsListView from '@/components/ListViews/ContactsListView.vue'
 import ViewControls from '@/components/ViewControls.vue'
+import { getMeta } from '@/stores/meta'
 import { organizationsStore } from '@/stores/organizations.js'
-import { dateFormat, dateTooltipFormat, timeAgo } from '@/utils'
+import { formatDate, timeAgo } from '@/utils'
+import { call } from 'frappe-ui'
 import { ref, computed } from 'vue'
 
+const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
+  getMeta('Contact')
 const { getOrganization } = organizationsStore()
 
 const showContactModal = ref(false)
 const showQuickEntryModal = ref(false)
+const showAddressModal = ref(false)
 
 const contactsListView = ref(null)
 
 // contacts data is loaded in the ViewControls component
 const contacts = ref({})
+const address = ref({})
 const loadMore = ref(1)
 const triggerResize = ref(1)
 const updatedPageCount = ref(20)
@@ -109,6 +118,30 @@ const rows = computed(() => {
     contacts.value?.data.rows.forEach((row) => {
       _rows[row] = contact[row]
 
+      let fieldType = contacts.value?.data.columns?.find(
+        (col) => (col.key || col.value) == row,
+      )?.type
+
+      if (
+        fieldType &&
+        ['Date', 'Datetime'].includes(fieldType) &&
+        !['modified', 'creation'].includes(row)
+      ) {
+        _rows[row] = formatDate(contact[row], '', true, fieldType == 'Datetime')
+      }
+
+      if (fieldType && fieldType == 'Currency') {
+        _rows[row] = getFormattedCurrency(row, contact)
+      }
+
+      if (fieldType && fieldType == 'Float') {
+        _rows[row] = getFormattedFloat(row, contact)
+      }
+
+      if (fieldType && fieldType == 'Percent') {
+        _rows[row] = getFormattedPercent(row, contact)
+      }
+
       if (row == 'full_name') {
         _rows[row] = {
           label: contact.full_name,
@@ -122,7 +155,7 @@ const rows = computed(() => {
         }
       } else if (['modified', 'creation'].includes(row)) {
         _rows[row] = {
-          label: dateFormat(contact[row], dateTooltipFormat),
+          label: formatDate(contact[row]),
           timeAgo: __(timeAgo(contact[row])),
         }
       }
@@ -130,4 +163,15 @@ const rows = computed(() => {
     return _rows
   })
 })
+
+async function openAddressModal(_address) {
+  if (_address) {
+    _address = await call('frappe.client.get', {
+      doctype: 'Address',
+      name: _address,
+    })
+  }
+  showAddressModal.value = true
+  address.value = _address || {}
+}
 </script>

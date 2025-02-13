@@ -1,7 +1,7 @@
 <template>
   <LayoutHeader v-if="deal.data">
     <header
-      class="relative flex h-12 items-center justify-between gap-2 py-2.5 pl-5"
+      class="relative flex h-10.5 items-center justify-between gap-2 py-2.5 pl-2"
     >
       <Breadcrumbs :items="breadcrumbs">
         <template #prefix="{ item }">
@@ -9,14 +9,15 @@
         </template>
       </Breadcrumbs>
       <div class="absolute right-0">
-        <Dropdown :options="statusOptions('deal', updateField, customStatuses)">
+        <Dropdown
+          :options="
+            statusOptions('deal', updateField, deal.data._customStatuses)
+          "
+        >
           <template #default="{ open }">
-            <Button
-              :label="deal.data.status"
-              :class="getDealStatus(deal.data.status).colorClass"
-            >
+            <Button :label="deal.data.status">
               <template #prefix>
-                <IndicatorIcon />
+                <IndicatorIcon :class="getDealStatus(deal.data.status).color" />
               </template>
               <template #suffix>
                 <FeatherIcon
@@ -34,83 +35,77 @@
     v-if="deal.data"
     class="flex h-12 items-center justify-between gap-2 border-b px-3 py-2.5"
   >
-    <component :is="deal.data._assignedTo?.length == 1 ? 'Button' : 'div'">
-      <MultipleAvatar
-        :avatars="deal.data._assignedTo"
-        @click="showAssignmentModal = true"
-      />
-    </component>
+    <AssignTo
+      v-model="deal.data._assignedTo"
+      :data="deal.data"
+      doctype="CRM Deal"
+    />
     <div class="flex items-center gap-2">
-      <CustomActions v-if="customActions" :actions="customActions" />
+      <CustomActions
+        v-if="deal.data._customActions?.length"
+        :actions="deal.data._customActions"
+      />
     </div>
   </div>
   <div v-if="deal.data" class="flex h-full overflow-hidden">
-    <Tabs
-      v-model="tabIndex"
-      v-slot="{ tab }"
-      :tabs="tabs"
-      tablistClass="!px-3"
-      class="overflow-auto"
-    >
-      <div v-if="tab.name == 'Details'">
-        <SLASection
-          v-if="deal.data.sla_status"
-          v-model="deal.data"
-          @updateField="updateField"
-        />
-        <div
-          v-if="fieldsLayout.data"
-          class="flex flex-1 flex-col justify-between overflow-hidden"
-        >
-          <div class="flex flex-col overflow-y-auto">
-            <div
-              v-for="(section, i) in fieldsLayout.data"
-              :key="section.label"
-              class="flex flex-col px-2 py-3 sm:p-3"
-              :class="{ 'border-b': i !== fieldsLayout.data.length - 1 }"
+    <Tabs as="div" v-model="tabIndex" :tabs="tabs" class="overflow-auto">
+      <TabList class="!px-3" />
+      <TabPanel v-slot="{ tab }">
+        <div v-if="tab.name == 'Details'">
+          <SLASection
+            v-if="deal.data.sla_status"
+            v-model="deal.data"
+            @updateField="updateField"
+          />
+          <div
+            v-if="sections.data"
+            class="flex flex-1 flex-col justify-between overflow-hidden"
+          >
+            <SidePanelLayout
+              v-model="deal.data"
+              :sections="sections.data"
+              doctype="CRM Deal"
+              @update="updateField"
+              @reload="sections.reload"
             >
-              <Section :is-opened="section.opened" :label="section.label">
-                <template #actions>
-                  <div v-if="section.contacts" class="pr-2">
-                    <Link
-                      value=""
-                      doctype="Contact"
-                      @change="(e) => addContact(e)"
-                      :onCreate="
-                        (value, close) => {
-                          _contact = {
-                            first_name: value,
-                            company_name: deal.data.organization,
-                          }
-                          showContactModal = true
-                          close()
+              <template #actions="{ section }">
+                <div v-if="section.name == 'contacts_section'" class="pr-2">
+                  <Link
+                    value=""
+                    doctype="Contact"
+                    @change="(e) => addContact(e)"
+                    :onCreate="
+                      (value, close) => {
+                        _contact = {
+                          first_name: value,
+                          company_name: deal.data.organization,
                         }
-                      "
-                    >
-                      <template #target="{ togglePopover }">
-                        <Button
-                          class="h-7 px-3"
-                          variant="ghost"
-                          icon="plus"
-                          @click="togglePopover()"
-                        />
-                      </template>
-                    </Link>
-                  </div>
-                </template>
-                <SectionFields
-                  v-if="section.fields"
-                  :fields="section.fields"
-                  :isLastSection="i == fieldsLayout.data.length - 1"
-                  v-model="deal.data"
-                  @update="updateField"
-                />
-                <div v-else>
+                        showContactModal = true
+                        close()
+                      }
+                    "
+                  >
+                    <template #target="{ togglePopover }">
+                      <Button
+                        class="h-7 px-3"
+                        variant="ghost"
+                        icon="plus"
+                        @click="togglePopover()"
+                      />
+                    </template>
+                  </Link>
+                </div>
+              </template>
+              <template #default="{ section }">
+                <div
+                  v-if="section.name == 'contacts_section'"
+                  class="contacts-area"
+                >
                   <div
                     v-if="
                       dealContacts?.loading && dealContacts?.data?.length == 0
                     "
-                    class="flex min-h-20 flex-1 items-center justify-center gap-3 text-base text-gray-500"
+                    class="flex min-h-20 flex-1 items-center justify-center gap-3 text-base text-ink-gray-4"
                   >
                     <LoadingIndicator class="h-4 w-4" />
                     <span>{{ __('Loading...') }}</span>
@@ -124,10 +119,10 @@
                       class="px-2 pb-2.5"
                       :class="[i == 0 ? 'pt-5' : 'pt-2.5']"
                     >
-                      <Section :is-opened="contact.opened">
+                      <Section :opened="contact.opened">
                         <template #header="{ opened, toggle }">
                           <div
-                            class="flex cursor-pointer items-center justify-between gap-2 pr-1 text-base leading-5 text-gray-700"
+                            class="flex cursor-pointer items-center justify-between gap-2 pr-1 text-base leading-5 text-ink-gray-7"
                           >
                             <div
                               class="flex h-7 items-center gap-2 truncate"
@@ -153,7 +148,7 @@
                               <Dropdown :options="contactOptions(contact.name)">
                                 <Button
                                   icon="more-horizontal"
-                                  class="text-gray-600"
+                                  class="text-ink-gray-5"
                                   variant="ghost"
                                 />
                               </Dropdown>
@@ -171,7 +166,7 @@
                               <Button variant="ghost" @click="toggle()">
                                 <FeatherIcon
                                   name="chevron-right"
-                                  class="h-4 w-4 text-gray-900 transition-all duration-300 ease-in-out"
+                                  class="h-4 w-4 text-ink-gray-9 transition-all duration-300 ease-in-out"
                                   :class="{ 'rotate-90': opened }"
                                 />
                               </Button>
@@ -179,7 +174,7 @@
                           </div>
                         </template>
                         <div
-                          class="flex flex-col gap-1.5 text-base text-gray-800"
+                          class="flex flex-col gap-1.5 text-base text-ink-gray-8"
                         >
                           <div class="flex items-center gap-3 pb-1.5 pl-1 pt-4">
                             <Email2Icon class="h-4 w-4" />
@@ -194,29 +189,29 @@
                     </div>
                     <div
                       v-if="i != section.contacts.length - 1"
-                      class="mx-2 h-px border-t border-gray-200"
+                      class="mx-2 h-px border-t border-outline-gray-modals"
                     />
                   </div>
                   <div
                     v-else
-                    class="flex h-20 items-center justify-center text-base text-gray-600"
+                    class="flex h-20 items-center justify-center text-base text-ink-gray-5"
                   >
                     {{ __('No contacts added') }}
                   </div>
                 </div>
-              </Section>
-            </div>
+              </template>
+            </SidePanelLayout>
           </div>
         </div>
-      </div>
-      <Activities
-        v-else
-        doctype="CRM Deal"
-        :tabs="tabs"
-        v-model:reload="reload"
-        v-model:tabIndex="tabIndex"
-        v-model="deal"
-      />
+        <Activities
+          v-else
+          doctype="CRM Deal"
+          :tabs="tabs"
+          v-model:reload="reload"
+          v-model:tabIndex="tabIndex"
+          v-model="deal"
+        />
+      </TabPanel>
     </Tabs>
   </div>
   <OrganizationModal
@@ -235,13 +230,6 @@
       afterInsert: (doc) => addContact(doc.name),
     }"
   />
-  <AssignmentModal
-    v-if="showAssignmentModal"
-    v-model="showAssignmentModal"
-    v-model:assignees="deal.data._assignedTo"
-    :doc="deal.data"
-    doctype="CRM Deal"
-  />
 </template>
 <script setup>
 import Icon from '@/components/Icon.vue'
@@ -254,6 +242,7 @@ import CommentIcon from '@/components/Icons/CommentIcon.vue'
 import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
 import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import NoteIcon from '@/components/Icons/NoteIcon.vue'
+import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
 import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
 import ArrowUpRightIcon from '@/components/Icons/ArrowUpRightIcon.vue'
@@ -261,16 +250,16 @@ import SuccessIcon from '@/components/Icons/SuccessIcon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import Activities from '@/components/Activities/Activities.vue'
 import OrganizationModal from '@/components/Modals/OrganizationModal.vue'
-import AssignmentModal from '@/components/Modals/AssignmentModal.vue'
-import MultipleAvatar from '@/components/MultipleAvatar.vue'
+import AssignTo from '@/components/AssignTo.vue'
 import ContactModal from '@/components/Modals/ContactModal.vue'
-import Link from '@/components/Controls/Link.vue'
 import Section from '@/components/Section.vue'
-import SectionFields from '@/components/SectionFields.vue'
+import Link from '@/components/Controls/Link.vue'
+import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import SLASection from '@/components/SLASection.vue'
 import CustomActions from '@/components/CustomActions.vue'
 import { createToast, setupAssignees, setupCustomizations } from '@/utils'
 import { getView } from '@/utils/view'
+import { getSettings } from '@/stores/settings'
 import { globalStore } from '@/stores/global'
 import { statusesStore } from '@/stores/statuses'
 import {
@@ -284,12 +273,16 @@ import {
   Dropdown,
   Avatar,
   Tabs,
+  TabList,
+  TabPanel,
   Breadcrumbs,
   call,
+  usePageMeta,
 } from 'frappe-ui'
 import { ref, computed, h, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+const { brand } = getSettings()
 const { $dialog, $socket } = globalStore()
 const { statusOptions, getDealStatus } = statusesStore()
 const route = useRoute()
@@ -302,14 +295,11 @@ const props = defineProps({
   },
 })
 
-const customActions = ref([])
-const customStatuses = ref([])
-
 const deal = createResource({
   url: 'crm.fcrm.doctype.crm_deal.api.get_deal',
   params: { name: props.dealId },
   cache: ['deal', props.dealId],
-  onSuccess: async (data) => {
+  onSuccess: (data) => {
     if (data.organization) {
       organization.update({
         params: { doctype: 'CRM Organization', name: data.organization },
@@ -317,7 +307,8 @@ const deal = createResource({
       organization.fetch()
     }
 
-    let obj = {
+    setupAssignees(deal)
+    setupCustomizations(deal, {
       doc: data,
       $dialog,
       $socket,
@@ -328,14 +319,10 @@ const deal = createResource({
       resource: {
         deal,
         dealContacts,
-        fieldsLayout,
+        sections,
       },
       call,
-    }
-    setupAssignees(data)
-    let customization = await setupCustomizations(data, obj)
-    customActions.value = customization.actions || []
-    customStatuses.value = customization.statuses || []
+    })
   },
 })
 
@@ -351,7 +338,6 @@ onMounted(() => {
 
 const reload = ref(false)
 const showOrganizationModal = ref(false)
-const showAssignmentModal = ref(false)
 const _organization = ref({})
 
 function updateDeal(fieldname, value, callback) {
@@ -374,7 +360,7 @@ function updateDeal(fieldname, value, callback) {
       createToast({
         title: __('Deal updated'),
         icon: 'check',
-        iconClasses: 'text-green-600',
+        iconClasses: 'text-ink-green-3',
       })
       callback?.()
     },
@@ -383,7 +369,7 @@ function updateDeal(fieldname, value, callback) {
         title: __('Error updating deal'),
         text: __(err.messages?.[0]),
         icon: 'x',
-        iconClasses: 'text-red-600',
+        iconClasses: 'text-ink-red-4',
       })
     },
   })
@@ -396,7 +382,7 @@ function validateRequired(fieldname, value) {
       title: __('Error Updating Deal'),
       text: __('{0} is a required field', [meta[fieldname].label]),
       icon: 'x',
-      iconClasses: 'text-red-600',
+      iconClasses: 'text-ink-red-4',
     })
     return true
   }
@@ -428,6 +414,13 @@ const breadcrumbs = computed(() => {
   return items
 })
 
+usePageMeta(() => {
+  return {
+    title: organization.data?.name || deal.data?.name,
+    icon: brand.favicon,
+  }
+})
+
 const tabs = computed(() => {
   let tabOptions = [
     {
@@ -452,6 +445,11 @@ const tabs = computed(() => {
       icon: CommentIcon,
     },
     {
+      name: 'Data',
+      label: __('Data'),
+      icon: DetailsIcon,
+    },
+    {
       name: 'Calls',
       label: __('Calls'),
       icon: PhoneIcon,
@@ -468,6 +466,11 @@ const tabs = computed(() => {
       icon: NoteIcon,
     },
     {
+      name: 'Attachments',
+      label: __('Attachments'),
+      icon: AttachmentIcon,
+    },
+    {
       name: 'WhatsApp',
       label: __('WhatsApp'),
       icon: WhatsAppIcon,
@@ -478,10 +481,10 @@ const tabs = computed(() => {
 })
 const { tabIndex } = useActiveTabManager(tabs, 'lastDealTab')
 
-const fieldsLayout = createResource({
-  url: 'crm.api.doc.get_sidebar_fields',
-  cache: ['fieldsLayout', props.dealId],
-  params: { doctype: 'CRM Deal', name: props.dealId },
+const sections = createResource({
+  url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_sidepanel_sections',
+  cache: ['sidePanelSections', 'CRM Deal'],
+  params: { doctype: 'CRM Deal' },
   auto: true,
   transform: (data) => getParsedFields(data),
 })
@@ -489,7 +492,7 @@ const fieldsLayout = createResource({
 function getParsedFields(sections) {
   sections.forEach((section) => {
     if (section.name == 'contacts_section') return
-    section.fields.forEach((field) => {
+    section.columns[0].fields.forEach((field) => {
       if (field.name == 'organization') {
         field.create = (value, close) => {
           _organization.value.organization_name = value
@@ -531,6 +534,15 @@ function contactOptions(contact) {
 }
 
 async function addContact(contact) {
+  if (dealContacts.data?.find((c) => c.name === contact)) {
+    createToast({
+      title: __('Contact already added'),
+      icon: 'x',
+      iconClasses: 'text-ink-red-3',
+    })
+    return
+  }
+
   let d = await call('crm.fcrm.doctype.crm_deal.crm_deal.add_contact', {
     deal: props.dealId,
     contact,
@@ -540,7 +552,7 @@ async function addContact(contact) {
     createToast({
       title: __('Contact added'),
       icon: 'check',
-      iconClasses: 'text-green-600',
+      iconClasses: 'text-ink-green-3',
     })
   }
 }
@@ -555,7 +567,7 @@ async function removeContact(contact) {
     createToast({
       title: __('Contact removed'),
       icon: 'check',
-      iconClasses: 'text-green-600',
+      iconClasses: 'text-ink-green-3',
     })
   }
 }
@@ -570,7 +582,7 @@ async function setPrimaryContact(contact) {
     createToast({
       title: __('Primary contact set'),
       icon: 'check',
-      iconClasses: 'text-green-600',
+      iconClasses: 'text-ink-green-3',
     })
   }
 }
@@ -581,7 +593,7 @@ const dealContacts = createResource({
   cache: ['deal_contacts', props.dealId],
   auto: true,
   onSuccess: (data) => {
-    let contactSection = fieldsLayout.data?.find(
+    let contactSection = sections.data?.find(
       (section) => section.name == 'contacts_section',
     )
     if (!contactSection) return

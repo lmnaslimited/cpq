@@ -4,7 +4,7 @@
     <table class="min-w-full table-fixed" style="border-spacing: 10px; border-collapse: collapse;">
       <thead class="bg-gray-100 rounded-lg text-gray-600 border">
         <tr>
-          <th class="px-6 py-1 w-10 text-center">
+          <th class="px-4 py-1 text-center">
             <input
               type="checkbox"
               class="rounded-sm border-gray-500 text-gray-900 hover:border-gray-600 focus:ring-offset-0 focus:border-gray-900 active:border-gray-700 transition w-3.5 h-3.5 hover:shadow-sm focus:ring-0 focus-visible:ring-2 focus-visible:ring-gray-400 active:bg-gray-100"
@@ -12,12 +12,12 @@
               @click="selectAllRows($event.target.checked)"
             /> 
           </th>
-          <th class="py-1 px-6 w-10 text-sm text-center">No</th>
+          <th class="py-1 px-4 text-sm text-center">{{ __("No") }}</th>
 
           <th
             v-for="column in filteredColumns"
             :key="column.fieldname"
-            class="py-1 w-1/5 text-sm"
+            :class="`py-1 text-sm w-1/${Math.min(filteredColumns.length, 5) || 1}`"
           >
             {{ column.label }}
           </th>

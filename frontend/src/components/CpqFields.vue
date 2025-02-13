@@ -27,6 +27,21 @@
         </p>
         <span v-if="rangeErrors[field.name]" class="text-red-500">{{ rangeErrors[field.name] }}</span>
       </div>
+      <div v-else-if="field.type == 'Text Editor'">
+        <p class="mb-2 text-sm text-gray-600">{{ __(field.label) }}</p>
+        <TextEditor
+            variant="outline"
+            ref="content"
+            editor-class="!prose-sm overflow-auto min-h-[180px] max-h-80 py-1.5 px-2 rounded border border-gray-300 bg-white hover:border-gray-400 hover:shadow-sm focus:bg-white focus:border-gray-500 focus:shadow-sm focus:ring-0 focus-visible:ring-2 focus-visible:ring-gray-400 text-gray-800 transition-colors"
+            :bubbleMenu="true"
+            :content="data[field.name]"
+            @change="(val) => (data[field.name] = val)"
+            :placeholder="
+              __('Took a call with John Doe and discussed the new project.')
+            "
+          />
+      </div>
+      <div v-else-if="field.type == 'Table'"></div>
       <div v-else-if="field.type === 'textbox'">
         <FormControl
           type="textarea"
@@ -46,6 +61,7 @@ import Fields from '@/components/Fields.vue'
 import { usersStore } from '@/stores/users'
 import { reactive, watch, onMounted } from 'vue'
 import { validateRangeIncrement } from '@/cpqUtils.js'
+import { TextEditor } from 'frappe-ui'
 
 const { getUser } = usersStore()
 

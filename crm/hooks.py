@@ -22,6 +22,17 @@ add_to_apps_screen = [
 	}
 ]
 
+'''
+Monkey Patch
+	-Monkey patching `get_linked_notes` to fetch all fields dynamically.
+	-This overrides the original function without modifying core files.
+	-Reference: See `crm.monkey_patch.py` for the detail.
+'''
+import crm.api.activities
+import crm.monkey_patch
+
+crm.api.activities.get_linked_notes = crm.monkey_patch.get_linked_notes_all_field
+
 # Includes in <head>
 # ------------------
 

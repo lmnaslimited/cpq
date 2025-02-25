@@ -9,7 +9,6 @@ export const cpqRoutes = [
         path: '/designs/view/:viewType?',
         name: 'Designs',
         component: () => import('@/pages/Designs.vue'),
-        meta: { scrollPos: { top: 0, left: 0 } },
     },
     {
       path: '/designs/:designId',
@@ -22,7 +21,6 @@ export const cpqRoutes = [
       path: '/items/view/:viewType?',
       name: 'Items',
       component: () => import('@/pages/Items.vue'),
-      meta: { scrollPos: { top: 0, left: 0 } },
     },
     {
       path: '/items/:itemId',
@@ -35,7 +33,6 @@ export const cpqRoutes = [
       path: '/quotations/view/:viewType?',
       name: 'Quotations',
       component: () => import('@/pages/Quotations.vue'),
-      meta: { scrollPos: { top: 0, left: 0 } },
     },
     {
       path: '/quotations/:quotationId',
@@ -48,7 +45,6 @@ export const cpqRoutes = [
       path: '/condition-types/view/:viewType?',
       name: 'Condition Types',
       component: () => import('@/pages/ConditionTypes.vue'),
-      meta: { scrollPos: { top: 0, left: 0 } },
     },
     {
       path: '/condition-types/:conditionId',
@@ -66,7 +62,6 @@ export const cpqRoutes = [
       path: '/condition-values/view/:viewType?',
       name: 'Condition Values',
       component: () => import('@/pages/ConditionValues.vue'),
-      meta: { scrollPos: { top: 0, left: 0 } },
     },
     {
       path: '/condition-values/:conditionValueId',

@@ -7,7 +7,8 @@ from pypika import Criterion
 from frappe.utils import make_filter_tuple, get_url_to_list
 from crm.api.views import get_views
 from crm.fcrm.doctype.crm_form_script.crm_form_script import get_form_script
-from crm.api.doc import get_sidebar_fields, get_fields_meta, get_assigned_users, get_field_obj
+from crm.api.doc import get_fields_meta, get_assigned_users
+from crm.fcrm.doctype.crm_fields_layout.crm_fields_layout import get_sidepanel_sections as get_sidebar_fields
 
 from functools import lru_cache
 

@@ -101,7 +101,7 @@
           // Set initial value to min if not defined
           if (props.data[L_NAME] === undefined || props.data[L_NAME] === null || props.data[L_NAME] === '' || props.data[L_NAME]) {
             props.data[L_NAME] = L_DEFAULT
-            fnUpdateRangeValue(L_NAME, L_DEFAULT, L_DEFAULT, LD_FIELD.max, LD_FIELD.step)
+            fnUpdateRangeValue(L_NAME, L_DEFAULT, L_DEFAULT, LD_SECTION.max, LD_SECTION.step)
             fnUpdateRangeDisplay(L_NAME, L_DEFAULT)
           }
         }else if (LD_SECTION.fieldtype === 'Select') {

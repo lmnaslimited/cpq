@@ -5,8 +5,8 @@
       :rows="rows"
       :options="{
         getRowRoute: (row) => ({
-          name: 'Design',
-          params: { designId: row.name },
+          name: 'Item',
+          params: { itemId: row.name },
           query: { view: route.query.view, viewType: route.params.viewType },
         }),
         selectable: options.selectable,
@@ -39,7 +39,7 @@
       <ListRows
         :rows="rows"
         v-slot="{ idx, column, item, row }"
-        doctype="Design"
+        doctype="Item"
       >
         <div v-if="column.key === '_assign'" class="flex items-center">
           <MultipleAvatar
@@ -155,7 +155,7 @@
       }"
       @loadMore="emit('loadMore')"
     />
-    <ListBulkActions ref="listBulkActionsRef" v-model="list" doctype="Design" />
+    <ListBulkActions ref="listBulkActionsRef" v-model="list" doctype="Item" />
   </template>
   
   <script setup>
@@ -250,7 +250,7 @@ const handleDelete = (selections, unselectAll) => {
     url: 'crm.apiCpq.design.delete_items',
     params:{
       items: JSON.stringify(Array.from(selections)),
-      doctype: 'Design',
+      doctype: 'Item',
     },
     onSuccess(data){
       if(data.status == 'success'){
@@ -265,7 +265,7 @@ const handleDelete = (selections, unselectAll) => {
       }
       else if(data.status == 'error'){
         createToast({
-          title: __('Unable to Deleted'),
+          title: __('Unable to Delete'),
           icon: 'check',
           iconClasses: 'text-green-600',
         })

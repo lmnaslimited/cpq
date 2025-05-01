@@ -17,18 +17,18 @@ const handleMobileView = (componentName) => {
         component: () => import(`@/pages/${handleMobileView('Design')}.vue`),
         props: true,
       },
-    //   {
-    //     alias: '/items',
-    //     path: '/items/view/:viewType?',
-    //     name: 'Items',
-    //     component: () => import('@/pages/Items.vue'),
-    //   },
-    //   {
-    //     path: '/items/:itemId',
-    //     name: 'Item',
-    //     component: () => import(`@/pages/${handleMobileView('Item')}.vue`),
-    //     props: true,
-    //   },
+      {
+        alias: '/items',
+        path: '/items/view/:viewType?',
+        name: 'Items',
+        component: () => import('@/pages/Items.vue'),
+      },
+      {
+        path: '/items/:itemId',
+        name: 'Item',
+        component: () => import(`@/pages/${handleMobileView('Item')}.vue`),
+        props: true,
+      },
     //   {
     //     alias: '/quotations',
     //     path: '/quotations/view/:viewType?',
@@ -83,11 +83,11 @@ const handleMobileView = (componentName) => {
           icon: TaskIcon,
           to: 'Designs',
       },
-    //   {
-    //     label: 'Items',
-    //     icon: TaskIcon,
-    //     to: 'Items',
-    //   },
+      {
+        label: 'Items',
+        icon: TaskIcon,
+        to: 'Items',
+      },
     //   {
     //     label: 'Quotations',
     //     icon: NoteIcon,
@@ -111,8 +111,8 @@ const handleMobileView = (componentName) => {
       switch (routeName) {
         case 'Designs':
           return TaskIcon
-        // case 'Items':
-        //   return TaskIcon
+        case 'Items':
+          return TaskIcon
         // case 'Quotations':
         //   return NoteIcon
         // case 'Condition Types':

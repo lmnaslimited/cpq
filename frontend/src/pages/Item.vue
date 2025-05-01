@@ -1,5 +1,5 @@
 <template>
-    <LayoutHeader v-if="design.data">
+    <LayoutHeader v-if="item.data">
       <template #left-header>
         <Breadcrumbs :items="breadcrumbs">
           <template #prefix="{ item }">
@@ -9,82 +9,68 @@
       </template>
       <template #right-header>
         <CustomActions
-          v-if="design.data._customActions?.length"
-          :actions="design.data._customActions"
+          v-if="item.data._customActions?.length"
+          :actions="item.data._customActions"
         />
         <AssignTo
-          v-model="design.data._assignedTo"
-          :data="design.data"
-          doctype="Design"
-        />
-        <Button
-            v-if="!design.data.item"
-            :label="__('Create Item')"
-            variant="solid"
-            :loading="isItemCreating"
-            @click="createItem" 
-        />
-        <Button
-            v-if="design.data.item"
-            :label="__('View Item')"
-            variant="solid"
-            @click="viewItem"
+          v-model="item.data._assignedTo"
+          :data="item.data"
+          doctype="Item"
         />
       </template>
     </LayoutHeader>
-    <div v-if="design?.data" class="flex h-full overflow-hidden">
+    <div v-if="item?.data" class="flex h-full overflow-hidden">
       <Tabs as="div" v-model="tabIndex" :tabs="tabs">
         <template #tab-panel>
           <Activities
             ref="activities"
-            doctype="Design"
+            doctype="Item"
             :tabs="tabs"
             v-model:reload="reload"
             v-model:tabIndex="tabIndex"
-            v-model="design"
+            v-model="item"
           />
         </template>
       </Tabs>
       <Resizer class="flex flex-col justify-between border-l" side="right">
         <div
           class="flex h-10.5 cursor-copy items-center border-b px-5 py-2.5 text-lg font-medium text-ink-gray-9"
-          @click="copyToClipboard(design.data.name)"
+          @click="copyToClipboard(item.data.name)"
         >
-          {{ __(design.data.name) }}
+          {{ __(item.data.name) }}
         </div>
         <div
           v-if="sections.data"
           class="flex flex-1 flex-col justify-between overflow-hidden"
         >
           <SidePanelLayout
-            v-model="design.data"
+            v-model="item.data"
             :sections="sections.data"
-            doctype="Design"
+            doctype="Item"
             @update="updateField"
             @reload="sections.reload"
           />
         </div>
       </Resizer>
     </div>
-
     <QuickEntryModal
       v-if="showQuickEntryModal"
       v-model="showQuickEntryModal"
-      doctype="Design"
+      doctype="Item"
       :onlyRequired="true"
     />
     <FilesUploader
-    v-if="design.data?.name"
-    v-model="showFilesUploader"
-    doctype="Design"
-    :docname="design.data.name"
-    @after="
-      () => {
-        activities?.all_activities?.reload()
-        changeTabTo('attachments')
-      }
-    "
-  />
+      v-if="item.data?.name"
+      v-model="showFilesUploader"
+      doctype="Item"
+      :docname="item.data.name"
+      @after="
+        () => {
+          activities?.all_activities?.reload()
+          changeTabTo('attachments')
+        }
+      "
+    />
   </template>
   <script setup>
   import Icon from '@/components/Icon.vue'
@@ -97,12 +83,11 @@
   import TaskIcon from '@/components/Icons/TaskIcon.vue'
   import NoteIcon from '@/components/Icons/NoteIcon.vue'
   import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
-  import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
   import AttachmentIcon from '@/components/Icons/AttachmentIcon.vue'
-  import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
   import LayoutHeader from '@/components/LayoutHeader.vue'
   import Activities from '@/components/Activities/Activities.vue'
   import AssignTo from '@/components/AssignTo.vue'
+  import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
   import SidePanelLayout from '@/components/SidePanelLayout.vue'
   import QuickEntryModal from '@/components/Modals/QuickEntryModal.vue'
   import CustomActions from '@/components/CustomActions.vue'
@@ -125,7 +110,6 @@
   import { capture } from '@/telemetry'
   import {
     createResource,
-    Dropdown,
     Tabs,
     Breadcrumbs,
     call,
@@ -137,10 +121,8 @@
   import { useActiveTabManager } from '@/composables/useActiveTabManager'
   
   const { brand } = getSettings()
-  const { isManager } = usersStore()
-  const { $dialog, $socket, makeCall } = globalStore()
-  const { statusOptions, getDesignStatus, getDealStatus } = statusesStore()
-  const { doctypeMeta } = getMeta('Design')
+  const { $dialog, $socket } = globalStore()
+  const { doctypeMeta } = getMeta('Item')
   
   const { updateOnboardingStep } = useOnboarding('frappecrm')
   
@@ -148,81 +130,83 @@
   const router = useRouter()
   
   const props = defineProps({
-    designId: {
+    itemId: {
       type: String,
       required: true,
     },
   })
   
-  const design = createResource({
+  const item = createResource({
     url: 'crm.apiCpq.design.get_doc_details',
-    params: {doctype:"Design", name: props.designId },
-    cache: ['design', props.designId],
+    params: {doctype: "Item", name: props.itemId },
+    cache: ['item', props.itemId],
     onSuccess: (data) => {
-      setupAssignees(design)
-      setupCustomizations(design, {
+      setupAssignees(item)
+      setupCustomizations(item, {
         doc: data,
         $dialog,
         $socket,
         router,
         updateField,
         createToast,
-        deleteDoc: deleteDesign,
-        resource: { design, sections },
+        deleteDoc: deleteItem,
+        resource: { item, sections },
         call,
       })
+      data.fields_meta.attributes.df.depends_on = null
+      data.fields_meta.attributes.df.mandatory_depends_on = null
     },
   })
   
   onMounted(() => {
-    if (design.data) return
-    design.fetch()
+    if (item.data) return
+    item.fetch()
   })
   
   const reload = ref(false)
   const showFilesUploader = ref(false)
   
-  function updateDesign(fieldname, value, callback) {
-  value = Array.isArray(fieldname) ? '' : value
-
-  if (!Array.isArray(fieldname) && validateRequired(fieldname, value)) return
-
-  createResource({
-    url: 'frappe.client.set_value',
-    params: {
-      doctype: 'Design',
-      name: props.designId,
-      fieldname,
-      value,
-    },
-    auto: true,
-    onSuccess: () => {
-      design.reload()
-      sections.reload()
-      reload.value = true
-      createToast({
-        title: __('Design updated'),
-        icon: 'check',
-        iconClasses: 'text-green-600',
-      })
-      callback?.()
-    },
-    onError: (err) => {
-      createToast({
-        title: __('Error updating design'),
-        text: __(err.messages?.[0]),
-        icon: 'x',
-        iconClasses: 'text-red-600',
-      })
-    },
-  })
-}
+  function updateItem(fieldname, value, callback) {
+    value = Array.isArray(fieldname) ? '' : value
+  
+    if (!Array.isArray(fieldname) && validateRequired(fieldname, value)) return
+  
+    createResource({
+      url: 'frappe.client.set_value',
+      params: {
+        doctype: 'Item',
+        name: props.itemId,
+        fieldname,
+        value,
+      },
+      auto: true,
+      onSuccess: () => {
+        item.reload()
+        sections.reload()
+        reload.value = true
+        createToast({
+          title: __('Item updated'),
+          icon: 'check',
+          iconClasses: 'text-ink-green-3',
+        })
+        callback?.()
+      },
+      onError: (err) => {
+        createToast({
+          title: __('Error updating item'),
+          text: __(err.messages?.[0]),
+          icon: 'x',
+          iconClasses: 'text-ink-red-4',
+        })
+      },
+    })
+  }
   
   function validateRequired(fieldname, value) {
-    let meta = design.data.fields_meta || {}
+    let meta = item.data.fields_meta || {}
     if (meta[fieldname]?.reqd && !value) {
       createToast({
-        title: __('Error Updating design'),
+        title: __('Error Updating Item'),
         text: __('{0} is a required field', [meta[fieldname].label]),
         icon: 'x',
         iconClasses: 'text-ink-red-4',
@@ -233,16 +217,16 @@
   }
   
   const breadcrumbs = computed(() => {
-    let items = [{ label: __('Designs'), route: { name: 'Designs' } }]
+    let items = [{ label: __('Items'), route: { name: 'Items' } }]
   
     if (route.query.view || route.query.viewType) {
-      let view = getView(route.query.view, route.query.viewType, 'Design')
+      let view = getView(route.query.view, route.query.viewType, 'Item')
       if (view) {
         items.push({
           label: __(view.label),
           icon: view.icon,
           route: {
-            name: 'Design',
+            name: 'Items',
             params: { viewType: route.query.viewType },
             query: { view: route.query.view },
           },
@@ -252,14 +236,14 @@
   
     items.push({
       label: title.value,
-      route: { name: 'Design', params: { designId: design.data.name } },
+      route: { name: 'Item', params: { itemId: item.data.name } },
     })
     return items
   })
   
   const title = computed(() => {
-    let t = doctypeMeta['Design']?.title_field || 'name'
-    return design.data?.[t] || props.designId
+    let t = doctypeMeta['Item']?.title_field || 'name'
+    return item.data?.[t] || props.itemId
   })
   
   usePageMeta(() => {
@@ -322,7 +306,7 @@
     return tabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
   })
   
-  const { tabIndex, changeTabTo } = useActiveTabManager(tabs, 'lastDesignTab')
+  const { tabIndex, changeTabTo } = useActiveTabManager(tabs, 'lastItemTab')
   
   watch(tabs, (value) => {
     if (value && route.params.tabName) {
@@ -334,108 +318,37 @@
       }
     }
   })
-    
+  
   const sections = createResource({
     url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_sidepanel_sections',
-    cache: ['sidePanelSections', 'Design'],
-    params: { doctype: 'Design' },
+    cache: ['sidePanelSections', 'Item'],
+    params: { doctype: 'Item' },
     auto: true,
   })
-
-  console.log("sections data", sections)
   
   function updateField(name, value, callback) {
-    updateDesign(name, value, () => {
-      design.data[name] = value
+    updateItem(name, value, () => {
+      item.data[name] = value
       callback?.()
     })
   }
   
-  async function deleteDesign(name) {
-  await call('frappe.client.delete', {
-    doctype: 'Design',
-    name,
-  })
-  router.push({ name: 'Designs' })
-}
-  const activities = ref(null)
-  
+  async function deleteItem(name) {
+    await call('frappe.client.delete', {
+      doctype: 'Item',
+      name,
+    })
+    router.push({ name: 'Items' })
+  }
+
+  const activities = ref(null) 
   const showQuickEntryModal = ref(false)
 
-  const isItemCreating = ref(false)
-
-  //custom button
-  const createItem = () => {
-  isItemCreating.value = true;
-  createResource({
-    url: 'crm.apiCpq.design.fn_create_item_from_design',
-    params: { design_name: props.designId },
-    onSuccess: (data) => {
-      isItemCreating.value = false;
-      updateField("item", data)
-      createToast({
-        title: __('Item created successfully'),
-        icon: 'check',
-        iconClasses: 'text-green-600',
-      })
-    },
-    onError: (err) => {
-      isItemCreating.value = false;
-      createToast({
-        title: __('Error creating item'),
-        text: __(err.messages?.[0] || 'Failed to create item'),
-        icon: 'x',
-        iconClasses: 'text-red-600',
-      })
-    },
-  }).fetch()
-}
-
-const viewItem = async () => {
-  if (design.data.item) {
-   router.push({ name: 'Item', params: { itemId: design.data.item } });
-  }
-};
-
-//direct material cost
-watch(
-  () => design.data?.direct_material_cost,
-  (newValue, oldValue) => {
-    const newCost = Number(newValue);
-    const oldCost = Number(oldValue);
-
-    if (!Number.isNaN(newCost) && !Number.isNaN(oldCost)) {
-      if (newCost !== oldCost) {
-        if (newCost > 0){
-          getTotalCost()
-        } else {
-          updateField("total_cost", 0);
-        }
-      } else {
-
-      }
-    } else {
-
-    }
-  },
-  { immediate: false }
-);
-
-const getTotalCost = () => {
-  createResource({
-    url: 'crm.apiCpq.pricing.get_total_cost_from_direct_material_cost',
-    params: {  i_direct_material_cost: design.data.direct_material_cost },
-    onSuccess: (data) => {
-      updateField("total_cost", data.total_cost);
-    }
-  }).fetch()
-}
-
-watch(
+  watch(
   () => sections.data,
   (val) => {
-    if (val && design.data?.item) {
-      console.log("design")
+    if (val && item.data?.variant_of) {
+        console.log("item")
       val.forEach(section => {
         section.columns?.forEach(column => {
           column.fields?.forEach(field => {
@@ -447,5 +360,6 @@ watch(
   },
   { immediate: true }
 );
+  
   </script>
   

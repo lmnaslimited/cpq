@@ -132,7 +132,8 @@ before_uninstall = "crm.uninstall.before_uninstall"
 override_doctype_class = {
 	"Contact": "crm.overrides.contact.CustomContact",
 	"Email Template": "crm.overrides.email_template.CustomEmailTemplate",
-    "Design": "crm.overrides.design.CustomDesign"
+    "Design": "crm.overrides.design.CustomDesign",
+    "Item": "crm.overrides.item.CustomItem"
 }
 
 # Document Events

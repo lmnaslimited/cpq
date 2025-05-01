@@ -6,13 +6,13 @@ from crm.fcrm.doctype.crm_form_script.crm_form_script import get_form_script
 
 
 @frappe.whitelist()
-def get_design(name):
-	id_design = frappe.get_doc("Design", name).as_dict()
+def get_doc_details(doctype, name):
+	id_doc = frappe.get_doc(doctype, name).as_dict()
 
-	id_design["fields_meta"] = get_fields_meta("Design")
-	id_design["_form_script"] = get_form_script("Design")
-	id_design["_assign"] = get_assigned_users("Design", id_design.name)
-	return id_design
+	id_doc["fields_meta"] = get_fields_meta(doctype)
+	id_doc["_form_script"] = get_form_script(doctype)
+	id_doc["_assign"] = get_assigned_users(doctype, id_doc.name)
+	return id_doc
 
 
 '''

@@ -29,18 +29,18 @@ const handleMobileView = (componentName) => {
         component: () => import(`@/pages/${handleMobileView('Item')}.vue`),
         props: true,
       },
-    //   {
-    //     alias: '/quotations',
-    //     path: '/quotations/view/:viewType?',
-    //     name: 'Quotations',
-    //     component: () => import('@/pages/Quotations.vue'),
-    //   },
-    //   {
-    //     path: '/quotations/:quotationId',
-    //     name: 'Quotation',
-    //     component: () => import(`@/pages/${handleMobileView('Quotation')}.vue`),
-    //     props: true,
-    //   },
+      {
+        alias: '/quotations',
+        path: '/quotations/view/:viewType?',
+        name: 'Quotations',
+        component: () => import('@/pages/Quotations.vue'),
+      },
+      {
+        path: '/quotations/:quotationId',
+        name: 'Quotation',
+        component: () => import(`@/pages/${handleMobileView('Quotation')}.vue`),
+        props: true,
+      },
     //   {
     //     alias: '/condition-types',
     //     path: '/condition-types/view/:viewType?',
@@ -74,7 +74,7 @@ const handleMobileView = (componentName) => {
   
   // importing the icon
   import TaskIcon from '@/components/Icons/TaskIcon.vue'
-//   import NoteIcon from '@/components/Icons/NoteIcon.vue'
+  import NoteIcon from '@/components/Icons/NoteIcon.vue'
   
   //cpq Menu 
   export const cpqLinks = [
@@ -88,11 +88,11 @@ const handleMobileView = (componentName) => {
         icon: TaskIcon,
         to: 'Items',
       },
-    //   {
-    //     label: 'Quotations',
-    //     icon: NoteIcon,
-    //     to: 'Quotations',
-    //   },
+      {
+        label: 'Quotations',
+        icon: NoteIcon,
+        to: 'Quotations',
+      },
     //   {
     //     label: 'Condition Types',
     //     icon: NoteIcon,
@@ -113,8 +113,8 @@ const handleMobileView = (componentName) => {
           return TaskIcon
         case 'Items':
           return TaskIcon
-        // case 'Quotations':
-        //   return NoteIcon
+        case 'Quotations':
+          return NoteIcon
         // case 'Condition Types':
         //   return NoteIcon
         // case 'Condition Values':

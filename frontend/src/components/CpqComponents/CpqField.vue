@@ -1,6 +1,4 @@
 <template>
-   <div
-        class="grid gap-4 grid-cols-2 sm:grid-cols-3">
     <Field
     v-for="field in sections"
     :key="field.fieldname"
@@ -36,7 +34,6 @@
         </div>
       </template>
     </Field>
-    </div>
   </template>
   
   <script setup>

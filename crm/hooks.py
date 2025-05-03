@@ -133,7 +133,8 @@ override_doctype_class = {
 	"Contact": "crm.overrides.contact.CustomContact",
 	"Email Template": "crm.overrides.email_template.CustomEmailTemplate",
     "Design": "crm.overrides.design.CustomDesign",
-    "Item": "crm.overrides.item.CustomItem"
+    "Item": "crm.overrides.item.CustomItem",
+    "Quotation": "crm.overrides.quotation.CustomQuotation"
 }
 
 # Document Events

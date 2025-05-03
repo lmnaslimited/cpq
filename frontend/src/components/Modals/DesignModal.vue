@@ -17,7 +17,10 @@
             />
           </div>
         </div>
+        <div
+        class="grid gap-4 grid-cols-2 sm:grid-cols-3">
         <CpqFields class="border-t" :sections="sections" :data="design" @updateField="handleFieldUpdate" :doctype="'Design'" />
+        </div>
         <ErrorMessage class="mt-4" v-if="error" :message="__(error)" />
       </template>
       <template #actions>

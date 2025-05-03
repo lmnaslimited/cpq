@@ -5,7 +5,7 @@
           <div class="mb-5 flex items-center justify-between">
             <div>
               <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
-                {{ __('Create Item Template') }}
+                {{ __('Create Quotation') }}
               </h3>
             </div>
             <div class="flex items-center gap-1">
@@ -23,7 +23,7 @@
             </div>
           </div>
           <div>
-            <FieldLayout v-if="tabs.data" :tabs="tabs.data" :data="item" />
+            <FieldLayout v-if="tabs.data" :tabs="tabs.data" :data="quotation" />
             <ErrorMessage class="mt-4" v-if="error" :message="__(error)" />
           </div>
         </div>
@@ -32,8 +32,8 @@
             <Button
               variant="solid"
               :label="__('Create')"
-              :loading="isItemCreating"
-              @click="createNewItem"
+              :loading="isQuotationCreating"
+              @click="createNewQuotation"
             />
           </div>
         </div>
@@ -50,6 +50,7 @@
   import { createResource } from 'frappe-ui'
   import { useOnboarding } from 'frappe-ui/frappe'
   import { ref, reactive, nextTick } from 'vue'
+  import { useRouter } from 'vue-router'
   
   const props = defineProps({
     defaults: Object,
@@ -61,12 +62,12 @@
   
   const show = defineModel()
   const error = ref(null)
-  const isItemCreating = ref(false)
+  const isQuotationCreating = ref(false)
   
   const tabs = createResource({
     url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
-    cache: ['QuickEntry', 'Item'],
-    params: { doctype: 'Item', type: 'Quick Entry' },
+    cache: ['QuickEntry', 'Quotation'],
+    params: { doctype: 'Quotation', type: 'Quick Entry' },
     auto: true,
     transform: (_tabs) => {
       return _tabs.forEach((tab) => {
@@ -77,8 +78,14 @@
                 field.hidden = 0
                 field.depends_on = null
                 field.mandatory_depends_on = null
-                item[field.fieldname] = []
+                quotation[field.fieldname] = []
               }
+              if (field.fieldname === 'party_name') {
+                field.label = 'Customer';
+                field.fieldtype = 'Link';
+                field.options = 'Customer';
+                field.mandatory = 1;
+                }
             })
           })
         })
@@ -86,21 +93,23 @@
     },
   })
   
-  const item = reactive({
-    item_code: '',
-    item_name: '',
-    item_group: '',
-    stock_uom: '',
-    attributes: [],
+  const quotation = reactive({
+    quotation_to: 'Customer',
+    party_name: '',
+    transaction_date: '',
+    valid_till: '',
+    status: 'Draft',
+    currency: '',
+    selling_price_list: 'Standard Selling',
+    items: []
   })
   
-  const createItem = createResource({
+  const createQuotation = createResource({
     url: 'frappe.client.insert',
     makeParams(values) {
       return {
         doc: {
-          doctype: 'Item',
-          has_variants: 1,
+          doctype: 'Quotation',
           ...values,
         },
       }
@@ -108,32 +117,24 @@
   })
   
   
-  function createNewItem() {
+  function createNewQuotation() {
   
-    createItem.submit(item, {
+    createQuotation.submit(quotation, {
       validate() {
         error.value = null
-        if (!item.item_code) {
-        error.value = __('Item Code is mandatory')
-        return error.value
-      }
-      if (!item.item_group) {
-        error.value = __('Item Group is mandatory')
-        return error.value
-      }
-        isItemCreating.value = true
+        isQuotationCreating.value = true
       },
       onSuccess(data) {
-        capture('item_created')
-        isItemCreating.value = false
+        capture('quotation_created')
+        isQuotationCreating.value = false
         show.value = false
-        router.push({ name: 'Item', params: { itemId: data.name } })
-        updateOnboardingStep('create_first_item', true, false, () => {
-          localStorage.setItem('firstItem', data.name)
+        router.push({ name: 'Quotation', params: { quotationId: data.name } })
+        updateOnboardingStep('create_first_quotation', true, false, () => {
+          localStorage.setItem('firstQuotation', data.name)
         })
       },
       onError(err) {
-        isItemCreating.value = false
+        isQuotationCreating.value = false
         if (!err.messages) {
           error.value = err.message
           return

@@ -5,7 +5,10 @@ export const validateRangeIncrement = (name, value, min, max, step) => {
     const numStep = parseFloat(step)
   
     // Validate if the value is numeric
-    if (!/^\d*\.?\d*$/.test(value)) return 'Invalid Input.'
+    // if (!/^\d*\.?\d*$/.test(value)) return 'Invalid Input.'
+    if (isNaN(Number(value))) {
+      return 'Invalid Input. Please enter a valid number.'
+    }
   
     // Validate if the value is within min and max range
     if (numValue < numMin || numValue > numMax) return `Value should be between ${min} and ${max}`

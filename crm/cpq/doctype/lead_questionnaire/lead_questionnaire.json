@@ -1,0 +1,52 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-05-06 10:23:00.285564",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "context",
+  "question",
+  "answer",
+  "descriptive_answer"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Question"
+  },
+  {
+   "fieldname": "answer",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Answer",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "descriptive_answer",
+   "fieldtype": "Small Text",
+   "label": "Descriptive Answer"
+  },
+  {
+   "fieldname": "context",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Context"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-05-08 16:29:39.469782",
+ "modified_by": "Administrator",
+ "module": "CPQ",
+ "name": "Lead Questionnaire",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

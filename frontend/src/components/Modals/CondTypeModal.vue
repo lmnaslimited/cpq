@@ -5,7 +5,7 @@
           <div class="mb-5 flex items-center justify-between">
             <div>
               <h3 class="text-2xl font-semibold leading-6 text-ink-gray-9">
-                {{ __('Create Quotation') }}
+                {{ __('Create Condition Type') }}
               </h3>
             </div>
             <div class="flex items-center gap-1">
@@ -23,7 +23,7 @@
             </div>
           </div>
           <div>
-            <FieldLayout v-if="tabs.data" :tabs="tabs.data" :data="quotation" />
+            <FieldLayout v-if="tabs.data" :tabs="tabs.data" :data="condType" />
             <ErrorMessage class="mt-4" v-if="error" :message="__(error)" />
           </div>
         </div>
@@ -32,8 +32,8 @@
             <Button
               variant="solid"
               :label="__('Create')"
-              :loading="isQuotationCreating"
-              @click="createNewQuotation"
+              :loading="isCondTypeCreating"
+              @click="createNewCondType"
             />
           </div>
         </div>
@@ -62,12 +62,12 @@
   
   const show = defineModel()
   const error = ref(null)
-  const isQuotationCreating = ref(false)
+  const isCondTypeCreating = ref(false)
   
   const tabs = createResource({
     url: 'crm.fcrm.doctype.crm_fields_layout.crm_fields_layout.get_fields_layout',
-    cache: ['QuickEntry', 'Quotation'],
-    params: { doctype: 'Quotation', type: 'Quick Entry' },
+    cache: ['QuickEntry', 'ConditionType'],
+    params: { doctype: 'Condition Type', type: 'Quick Entry' },
     auto: true,
     transform: (_tabs) => {
       return _tabs.forEach((tab) => {
@@ -78,15 +78,8 @@
                 field.hidden = 0
                 field.depends_on = null
                 field.mandatory_depends_on = null
-                quotation[field.fieldname] = []
+                condType[field.fieldname] = []
               }
-              if (field.fieldname === 'party_name') {
-                field.label = quotation['quotation_to'];
-                field.fieldtype = 'Link';
-                field.options = quotation['quotation_to'];
-                field.mandatory = 1;
-                quotation[field.fieldname] = ''
-                }
             })
           })
         })
@@ -94,23 +87,23 @@
     },
   })
   
-  const quotation = reactive({
-    quotation_to: 'CRM Deal',
-    party_name: '',
-    transaction_date: '',
-    valid_till: '',
-    status: 'Draft',
-    currency: '',
-    selling_price_list: 'Standard Selling',
-    items: []
+  const condType = reactive({
+    document_reference: '',
+    condition_type: '',
+    enable: 1,
+    is_formula_based: 0,
+    is_api_based: 0,
+    is_value_based: 0,
+    input_sequence: [],
+    output_sequence: []
   })
   
-  const createQuotation = createResource({
+  const createCondType = createResource({
     url: 'frappe.client.insert',
     makeParams(values) {
       return {
         doc: {
-          doctype: 'Quotation',
+          doctype: 'Condition Type',
           ...values,
         },
       }
@@ -118,24 +111,24 @@
   })
   
   
-  function createNewQuotation() {
+  function createNewCondType() {
   
-    createQuotation.submit(quotation, {
+    createCondType.submit(condType, {
       validate() {
         error.value = null
-        isQuotationCreating.value = true
+        isCondTypeCreating.value = true
       },
       onSuccess(data) {
-        capture('quotation_created')
-        isQuotationCreating.value = false
+        capture('condition_type_created')
+        isCondTypeCreating.value = false
         show.value = false
-        router.push({ name: 'Quotation', params: { quotationId: data.name } })
-        updateOnboardingStep('create_first_quotation', true, false, () => {
-          localStorage.setItem('firstQuotation', data.name)
+        router.push({ name: 'Condition Type', params: { condTypeId: data.name } })
+        updateOnboardingStep('create_first_condition_type', true, false, () => {
+          localStorage.setItem('firstConditionType', data.name)
         })
       },
       onError(err) {
-        isQuotationCreating.value = false
+        isCondTypeCreating.value = false
         if (!err.messages) {
           error.value = err.message
           return
@@ -153,12 +146,38 @@
       show.value = false
     })
   }
+
+  //custom logic
+  const LaRestrictedFieldType = [
+  'Table', 'Geolocation', 'Attach', 'Attach Image', 'HTML', 'Signature',
+]
+  const params = computed(() => {
+  return {
+    doctype: condType.document_reference,
+    restricted_fieldtypes: LaRestrictedFieldType,
+    as_array: true,
+  }
+})
+
+const fnFields = createResource({
+  url: 'crm.api.doc.get_fields_meta',
+  params: params.value,
+  auto: condType.document_reference == '' ? false : true,
+  transform:(data) => {
+    return data.map(field => ({
+      label: field.label,
+      value: field.fieldname
+    }));
+  }
+})
   
-  watch(
-    () => quotation.quotation_to,
-  () => {
-    tabs.fetch()
-      },
-  )
+  watch(() => condType.document_reference, (newValue) => {
+    if (newValue) {
+      fnFields.fetch(params.value).then(() => {
+      console.log("new value of modal", fnFields);
+    });
+    }
+  })
+
   </script>
   

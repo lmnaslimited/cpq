@@ -342,7 +342,6 @@
     auto: true,
   })
 
-  console.log("sections data", sections)
   
   function updateField(name, value, callback) {
     updateDesign(name, value, () => {

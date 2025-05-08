@@ -49,7 +49,8 @@
   import { capture } from '@/telemetry'
   import { createResource } from 'frappe-ui'
   import { useOnboarding } from 'frappe-ui/frappe'
-  import { ref, reactive, nextTick } from 'vue'
+  import { ref, reactive, nextTick, watch } from 'vue'
+  import { useRouter } from 'vue-router'
   
   const props = defineProps({
     defaults: Object,
@@ -94,6 +95,19 @@
     attributes: [],
   })
   
+  //custom function
+  const getAttributes = createResource({
+  url: 'frappe.client.get_list',
+  makeParams(attributeNames) {
+    return {
+      doctype: 'Item Attribute',
+      fields: ['*'],
+      filters: [['name', 'in', attributeNames]],
+      limit_page_length: attributeNames.length,
+    }
+  },
+})
+
   const createItem = createResource({
     url: 'frappe.client.insert',
     makeParams(values) {
@@ -108,8 +122,24 @@
   })
   
   
-  function createNewItem() {
-  
+  async function createNewItem() {
+    const attributeNames = item.attributes.map(a => a.attribute)
+
+    const attributeDetails = await getAttributes.fetch(attributeNames)
+
+    // Create a lookup map for quick access
+    const attributeMap = Object.fromEntries(
+      attributeDetails.map(attr => [attr.name, attr])
+    )
+
+    // Merge additional fields into item.attributes
+    item.attributes = item.attributes.map(attr => ({
+      ...attr,
+      numeric_values: attributeMap[attr.attribute]?.numeric_values || [],
+      from_range: attributeMap[attr.attribute]?.from_range || null,
+      to_range: attributeMap[attr.attribute]?.to_range || null,
+      increment: attributeMap[attr.attribute]?.increment || null,
+    }))
     createItem.submit(item, {
       validate() {
         error.value = null
@@ -151,6 +181,13 @@
       show.value = false
     })
   }
+
+  watch(
+    () => item.item_code, 
+    (newValue) => {
+      item.item_name = newValue
+    }
+  )
   
   </script>
   

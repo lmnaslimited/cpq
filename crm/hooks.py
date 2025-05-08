@@ -134,7 +134,8 @@ override_doctype_class = {
 	"Email Template": "crm.overrides.email_template.CustomEmailTemplate",
     "Design": "crm.overrides.design.CustomDesign",
     "Item": "crm.overrides.item.CustomItem",
-    "Quotation": "crm.overrides.quotation.CustomQuotation"
+    "Quotation": "crm.overrides.quotation.CustomQuotation",
+    "Condition Type": "crm.overrides.condition_type.CustomConditionType"
 }
 
 # Document Events
@@ -165,6 +166,10 @@ doc_events = {
 		"before_validate": ["crm.api.demo.validate_user"],
 		"validate_reset_password": ["crm.api.demo.validate_reset_password"],
 	},
+	"Item Price": {
+		"after_insert": ["crm.apiCpq.pricing.create_or_update_item_prices"],
+		"after_update": ["crm.apiCpq.pricing.create_or_update_item_prices"]
+	}
 }
 
 # Scheduled Tasks
@@ -320,4 +325,60 @@ standard_dropdown_items = [
 		"route": "#",
 		"is_standard": 1,
 	},
+]
+
+fixtures = [
+    {
+        "doctype": "Custom Field",
+         "filters": [
+            [
+                "name",
+                "in",
+                (
+                    "CRM Lead-custom_prompt",
+                    "CRM Lead-custom_question_type",
+                    "CRM Lead-custom_lead_tracker",
+                    "CRM Lead-custom_lead_questionnaire"
+                )
+            ]
+         ]
+    },
+    {
+        "doctype": "Server Script",
+        "filters": [
+            [
+                "name",
+                "in",
+                (
+                    "Get Meta Data of a Doctype",
+                    "Lead Questionnaire Prompt"
+				)
+			]
+		]
+	},
+    {
+        "doctype": "Client Script",
+        "filters": [
+            [
+                "name",
+                "in",
+                (
+                    "Condition Type",
+                    "Condition Value"
+				)
+			]
+		]
+	},
+    {
+        "doctype": "CRM Form Script",
+        "filters": [
+            [
+                "name",
+                "in",
+                (
+                    "CRM Lead Questionnaire"
+				)
+			]
+		]
+	}
 ]

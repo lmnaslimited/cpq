@@ -41,18 +41,18 @@ const handleMobileView = (componentName) => {
         component: () => import(`@/pages/${handleMobileView('Quotation')}.vue`),
         props: true,
       },
-    //   {
-    //     alias: '/condition-types',
-    //     path: '/condition-types/view/:viewType?',
-    //     name: 'Condition Types',
-    //     component: () => import('@/pages/ConditionTypes.vue'),
-    //   },
-    //   {
-    //     path: '/condition-types/:conditionId',
-    //     name: 'Condition Type',
-    //     component: () => import(`@/pages/${handleMobileView('ConditionType')}.vue`),
-    //     props: true,
-    //   },
+      {
+        alias: '/condition-types',
+        path: '/condition-types/view/:viewType?',
+        name: 'Condition Types',
+        component: () => import('@/pages/ConditionTypes.vue'),
+      },
+      {
+        path: '/condition-types/:condTypeId',
+        name: 'Condition Type',
+        component: () => import(`@/pages/${handleMobileView('ConditionType')}.vue`),
+        props: true,
+      },
     //   {
     //     path: '/condition-types/create',
     //     name: 'Create',
@@ -93,11 +93,11 @@ const handleMobileView = (componentName) => {
         icon: NoteIcon,
         to: 'Quotations',
       },
-    //   {
-    //     label: 'Condition Types',
-    //     icon: NoteIcon,
-    //     to: 'Condition Types',
-    //   },
+      {
+        label: 'Condition Types',
+        icon: NoteIcon,
+        to: 'Condition Types',
+      },
     //   {
     //     label: 'Condition Values',
     //     icon: TaskIcon,
@@ -115,8 +115,8 @@ const handleMobileView = (componentName) => {
           return TaskIcon
         case 'Quotations':
           return NoteIcon
-        // case 'Condition Types':
-        //   return NoteIcon
+        case 'Condition Types':
+          return NoteIcon
         // case 'Condition Values':
         //   return TaskIcon
         default:

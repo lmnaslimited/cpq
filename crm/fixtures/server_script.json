@@ -1,0 +1,40 @@
+[
+ {
+  "allow_guest": 0,
+  "api_method": "get_meta",
+  "cron_format": null,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Server Script",
+  "doctype_event": "Before Insert",
+  "enable_rate_limit": 0,
+  "event_frequency": "All",
+  "modified": "2025-05-08 01:46:10.026388",
+  "module": null,
+  "name": "Get Meta Data of a Doctype",
+  "rate_limit_count": 5,
+  "rate_limit_seconds": 86400,
+  "reference_doctype": null,
+  "script": "#This is the custom api to get the meta dat for the incoming doctype\n\nl_doctype = frappe.form_dict.get('i_doctype')\n\nid_meta = frappe.get_meta(l_doctype)\n\nfrappe.flags = id_meta.fields",
+  "script_type": "API"
+ },
+ {
+  "allow_guest": 0,
+  "api_method": null,
+  "cron_format": null,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Server Script",
+  "doctype_event": "After Save",
+  "enable_rate_limit": 0,
+  "event_frequency": "All",
+  "modified": "2025-05-08 23:54:44.811620",
+  "module": null,
+  "name": "Lead Questionnaire Prompt",
+  "rate_limit_count": 5,
+  "rate_limit_seconds": 86400,
+  "reference_doctype": "CRM Lead",
+  "script": "# Generate a custom prompt for sales qualification questions based on lead details.\n# If no custom prompt is already set, use default values or values from the document fields\n# to create a prompt tailored for AI-powered ERP adoption, then save it to the document.\n\n# Prepare a dictionary with lead data, using default values if fields are missing\nld_lead_data = {\n    \"industry\":  doc.industry or \"Manufacturing\",\n    \"territory\":  doc.territory or \"Global\",\n    \"lead_source\":  doc.source  or \"Unknown\",\n    \"market_segment\":  doc.market_segment  or \"SMB\",\n    \"question_type\":  doc.custom_question_type  or \"Close Ended\"\n};\n\n# Construct a custom prompt string using the lead's data\nl_custom_prompt = (\n    f\"Generate 5 sales qualification questions for a {ld_lead_data['industry']} company in {ld_lead_data['territory']}. \"\n    f\"The lead source is {ld_lead_data['lead_source']} and the market segment is {ld_lead_data['market_segment']}. \"\n    f\"Keep the questions {ld_lead_data['question_type']} and short, relevant to AI-powered ERP adoption, and avoid generic queries.\"\n)\n\n# Check if a custom prompt is already present\nif not doc.custom_prompt:\n    \n    # If not, assign the generated prompt to the document's custom_prompt field\n    doc.custom_prompt = l_custom_prompt\n    doc.save()",
+  "script_type": "DocType Event"
+ }
+]

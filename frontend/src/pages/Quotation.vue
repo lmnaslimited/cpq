@@ -228,7 +228,7 @@
 
     items.push({
         label: title.value,
-        route: { name: 'Quotation', params: { lquotationId: quotation.data.name } },
+        route: { name: 'Quotation', params: { quotationId: quotation.data.name } },
     })
     return items
   })

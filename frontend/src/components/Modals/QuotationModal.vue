@@ -98,9 +98,8 @@
     quotation_to: 'CRM Deal',
     party_name: '',
     transaction_date: '',
-    valid_till: '',
     status: 'Draft',
-    currency: '',
+    currency: 'INR',
     selling_price_list: 'Standard Selling',
     items: []
   })
@@ -154,11 +153,67 @@
     })
   }
   
+  //custom implementation begins
+
+  //to refetch the tab if the quotation_to(which is Link to Doctype)
+  //change, so the party_name whicg is Dynamic Link field depends on quotation_to
   watch(
     () => quotation.quotation_to,
   () => {
     tabs.fetch()
       },
   )
+  
+  //get the item price list for the
+  //params passed
+  const itemPriceList = createResource({
+    url: 'frappe.client.get_list',
+    auto: false
+  });
+
+  //this watch the items table and selling_price_list field changes
+  watch(
+  () => [quotation.items, quotation.selling_price_list],
+  ([newItems, newPriceList], [oldItems, oldPriceList]) => {
+    //loop through each rows in the items table
+    newItems.forEach( (value, index) => {
+      //flag to check if the rate should be fetched again
+      //to avoid unwanted fetching of resource (performance)
+      const shouldRefetch =
+        !value.rate || newPriceList !== oldPriceList;
+        console.log("should change", shouldRefetch)
+      //if flag is true and item_code is present
+      //fetch the itemPriceList 
+      if (shouldRefetch && value.item_code){
+        //construction of param required
+        //to get the pricelist's rate for 
+        //selected selling_price_list and item_code
+        const params = {
+            doctype: "Item Price",
+            fields: ['price_list_rate'],
+            filters: {
+              item_code: value.item_code,
+              price_list: quotation.selling_price_list
+            }
+        }
+        itemPriceList.fetch(params).then((res)=>{
+          if (res && res.length > 0) {
+            // Ensure we're getting the correct price
+            //since it return as array
+            const price = res[0].price_list_rate;
+            // Update the rate in the quotation item
+            quotation.items[index].rate = price;
+          }
+        }).catch(err => {
+          console.log('Error fetching price:', err);
+        });
+      }
+      if(value.rate && value.qty){
+        quotation.items[index].amount = value.rate * value.qty
+      }
+    })
+  },
+  { deep: true }
+);
   </script>
   

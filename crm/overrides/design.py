@@ -22,12 +22,19 @@ class CustomDesign(Design):
 				'label': 'Design Template',
 				'type': 'Data',
 				'key': 'design_template',
-				'width': '8rem',
+				'width': '12rem',
+			},
+			{
+				'label': 'Total Cost',
+				'type': 'Data',
+				'key': 'total_cost',
+				'width': '12rem',
 			},
 		]
 		rows = [
 			"name",
 			"status",
 			"design_template",
+			"total_cost"
 		]
 		return {'columns': columns, 'rows': rows}

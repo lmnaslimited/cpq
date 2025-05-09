@@ -135,7 +135,7 @@
     // Merge additional fields into item.attributes
     item.attributes = item.attributes.map(attr => ({
       ...attr,
-      numeric_values: attributeMap[attr.attribute]?.numeric_values || [],
+      numeric_values: attributeMap[attr.attribute]?.numeric_values || 0,
       from_range: attributeMap[attr.attribute]?.from_range || null,
       to_range: attributeMap[attr.attribute]?.to_range || null,
       increment: attributeMap[attr.attribute]?.increment || null,

@@ -176,7 +176,7 @@ function validateRangeFields(fetchedFields, design) {
   
   onMounted(() => {
     if (!design.created_by) {
-      design.created_by = getUser().email
+      design.created_by = getUser().name
     }
     fetchDesignTemplates()
   })

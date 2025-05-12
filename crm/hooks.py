@@ -351,7 +351,8 @@ fixtures = [
                 "in",
                 (
                     "Get Meta Data of a Doctype",
-                    "Lead Questionnaire Prompt"
+                    "Lead Questionnaire Prompt",
+                    "Lead Status Tracker"
 				)
 			]
 		]

@@ -1,9 +1,10 @@
-from bs4 import BeautifulSoup
 import frappe
-from frappe.translate import get_all_translations
-from frappe.utils import validate_email_address, split_emails, cstr
-from frappe.utils.telemetry import POSTHOG_HOST_FIELD, POSTHOG_PROJECT_FIELD
+from bs4 import BeautifulSoup
 from frappe.core.api.file import get_max_file_size
+from frappe.translate import get_all_translations
+from frappe.utils import cstr, split_emails, validate_email_address
+from frappe.utils.modules import get_modules_from_all_apps_for_user
+from frappe.utils.telemetry import POSTHOG_HOST_FIELD, POSTHOG_PROJECT_FIELD
 
 
 @frappe.whitelist(allow_guest=True)
@@ -63,6 +64,11 @@ def check_app_permission():
 	if frappe.session.user == "Administrator":
 		return True
 
+	allowed_modules = get_modules_from_all_apps_for_user()
+	allowed_modules = [x["module_name"] for x in allowed_modules]
+	if "FCRM" not in allowed_modules:
+		return False
+
 	roles = frappe.get_roles()
 	if any(
 		role in ["System Manager", "Sales User", "Sales Manager", "Sales Master Manager"] for role in roles
@@ -116,6 +122,12 @@ def invite_by_email(emails: str, role: str):
 
 	for email in to_invite:
 		frappe.get_doc(doctype="CRM Invitation", email=email, role=role).insert(ignore_permissions=True)
+
+	return {
+		"existing_members": existing_members,
+		"existing_invites": existing_invites,
+		"to_invite": to_invite,
+	}
 
 
 @frappe.whitelist()

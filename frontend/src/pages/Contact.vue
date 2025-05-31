@@ -8,7 +8,7 @@
       </Breadcrumbs>
     </template>
   </LayoutHeader>
-  <div ref="parentRef" class="flex h-full">
+  <div v-if="contact.data" ref="parentRef" class="flex h-full">
     <Resizer
       v-if="contact.data"
       :parent="$refs.parentRef"
@@ -121,10 +121,9 @@
         class="flex flex-1 flex-col justify-between overflow-hidden"
       >
         <SidePanelLayout
-          v-model="contact.data"
           :sections="sections.data"
           doctype="Contact"
-          @update="updateField"
+          :docname="contact.data.name"
           @reload="sections.reload"
         />
       </div>
@@ -168,10 +167,16 @@
       </template>
     </Tabs>
   </div>
+  <ErrorPage
+    v-else-if="errorTitle"
+    :errorTitle="errorTitle"
+    :errorMessage="errorMessage"
+  />
   <AddressModal v-model="showAddressModal" v-model:address="_address" />
 </template>
 
 <script setup>
+import ErrorPage from '@/components/ErrorPage.vue'
 import Resizer from '@/components/Resizer.vue'
 import Icon from '@/components/Icon.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
@@ -181,7 +186,7 @@ import CameraIcon from '@/components/Icons/CameraIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import AddressModal from '@/components/Modals/AddressModal.vue'
-import { formatDate, timeAgo, createToast } from '@/utils'
+import { formatDate, timeAgo } from '@/utils'
 import { getView } from '@/utils/view'
 import { getSettings } from '@/stores/settings'
 import { getMeta } from '@/stores/meta'
@@ -199,9 +204,11 @@ import {
   createResource,
   usePageMeta,
   Dropdown,
+  toast,
 } from 'frappe-ui'
 import { ref, computed, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { errorMessage as _errorMessage } from '../utils'
 
 const { brand } = getSettings()
 const { $dialog, makeCall } = globalStore()
@@ -225,6 +232,9 @@ const showAddressModal = ref(false)
 const _contact = ref({})
 const _address = ref({})
 
+const errorTitle = ref('')
+const errorMessage = ref('')
+
 const contact = createResource({
   url: 'crm.api.contact.get_contact',
   cache: ['contact', props.contactId],
@@ -235,6 +245,18 @@ const contact = createResource({
       ...data,
       actual_mobile_no: data.mobile_no,
       mobile_no: data.mobile_no,
+    }
+  },
+  onSuccess: () => {
+    errorTitle.value = ''
+    errorMessage.value = ''
+  },
+  onError: (err) => {
+    if (err.messages?.[0]) {
+      errorTitle.value = __('Not permitted')
+      errorMessage.value = __(err.messages?.[0])
+    } else {
+      router.push({ name: 'Contacts' })
     }
   },
 })
@@ -501,11 +523,7 @@ async function setAsPrimary(field, value) {
   })
   if (d) {
     contact.reload()
-    createToast({
-      title: 'Contact updated',
-      icon: 'check',
-      iconClasses: 'text-ink-green-3',
-    })
+    toast.success(__('Contact updated'))
   }
 }
 
@@ -518,11 +536,7 @@ async function createNew(field, value) {
   })
   if (d) {
     contact.reload()
-    createToast({
-      title: 'Contact updated',
-      icon: 'check',
-      iconClasses: 'text-ink-green-3',
-    })
+    toast.success(__('Contact updated'))
   }
 }
 
@@ -535,11 +549,7 @@ async function editOption(doctype, name, fieldname, value) {
   })
   if (d) {
     contact.reload()
-    createToast({
-      title: 'Contact updated',
-      icon: 'check',
-      iconClasses: 'text-ink-green-3',
-    })
+    toast.success(__('Contact updated'))
   }
 }
 
@@ -549,11 +559,7 @@ async function deleteOption(doctype, name) {
     name,
   })
   await contact.reload()
-  createToast({
-    title: 'Contact updated',
-    icon: 'check',
-    iconClasses: 'text-ink-green-3',
-  })
+  toast.success(__('Contact updated'))
 }
 
 async function updateField(fieldname, value) {
@@ -563,11 +569,7 @@ async function updateField(fieldname, value) {
     fieldname,
     value,
   })
-  createToast({
-    title: 'Contact updated',
-    icon: 'check',
-    iconClasses: 'text-ink-green-3',
-  })
+  toast.success(__('Contact updated'))
 
   contact.reload()
 }

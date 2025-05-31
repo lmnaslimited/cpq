@@ -8,7 +8,7 @@
       </Breadcrumbs>
     </template>
   </LayoutHeader>
-  <div ref="parentRef" class="flex h-full">
+  <div v-if="organization.doc" ref="parentRef" class="flex h-full">
     <Resizer
       v-if="organization.doc"
       :parent="$refs.parentRef"
@@ -106,10 +106,9 @@
         class="flex flex-1 flex-col justify-between overflow-hidden"
       >
         <SidePanelLayout
-          v-model="organization.doc"
           :sections="sections.data"
           doctype="CRM Organization"
-          @update="updateField"
+          :docname="organization.doc.name"
           @reload="sections.reload"
         />
       </div>
@@ -160,6 +159,11 @@
       </template>
     </Tabs>
   </div>
+  <ErrorPage
+    v-else-if="errorTitle"
+    :errorTitle="errorTitle"
+    :errorMessage="errorMessage"
+  />
   <QuickEntryModal
     v-if="showQuickEntryModal"
     v-model="showQuickEntryModal"
@@ -169,6 +173,7 @@
 </template>
 
 <script setup>
+import ErrorPage from '@/components/ErrorPage.vue'
 import Resizer from '@/components/Resizer.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import Icon from '@/components/Icon.vue'
@@ -187,7 +192,7 @@ import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
 import { getView } from '@/utils/view'
-import { formatDate, timeAgo, createToast } from '@/utils'
+import { formatDate, timeAgo } from '@/utils'
 import {
   Tooltip,
   Breadcrumbs,
@@ -200,6 +205,7 @@ import {
   createDocumentResource,
   usePageMeta,
   createResource,
+  toast,
 } from 'frappe-ui'
 import { h, computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -221,24 +227,28 @@ const showQuickEntryModal = ref(false)
 const route = useRoute()
 const router = useRouter()
 
+const errorTitle = ref('')
+const errorMessage = ref('')
+
 const organization = createDocumentResource({
   doctype: 'CRM Organization',
   name: props.organizationId,
   cache: ['organization', props.organizationId],
   fields: ['*'],
   auto: true,
+  onSuccess: () => {
+    errorTitle.value = ''
+    errorMessage.value = ''
+  },
+  onError: (err) => {
+    if (err.messages?.[0]) {
+      errorTitle.value = __('Not permitted')
+      errorMessage.value = __(err.messages?.[0])
+    } else {
+      router.push({ name: 'Organizations' })
+    }
+  },
 })
-
-async function updateField(fieldname, value) {
-  await organization.setValue.submit({
-    [fieldname]: value,
-  })
-  createToast({
-    title: __('Organization updated'),
-    icon: 'check',
-    iconClasses: 'text-ink-green-3',
-  })
-}
 
 const breadcrumbs = computed(() => {
   let items = [{ label: __('Organizations'), route: { name: 'Organizations' } }]
@@ -328,12 +338,7 @@ function website(url) {
 }
 
 function openWebsite() {
-  if (!organization.doc.website)
-    createToast({
-      title: __('Website not found'),
-      icon: 'x',
-      iconClasses: 'text-ink-red-4',
-    })
+  if (!organization.doc.website) toast.error(__('No website found'))
   else window.open(organization.doc.website, '_blank')
 }
 

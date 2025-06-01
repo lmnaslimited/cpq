@@ -120,6 +120,7 @@ def get_doctype_activities(doctype, name):
 		activity = {
 			"activity_type": "communication",
 			"communication_type": communication.communication_type,
+			"communication_date": communication.communication_date or communication.creation,
 			"creation": communication.creation,
 			"data": {
 				"subject": communication.subject,

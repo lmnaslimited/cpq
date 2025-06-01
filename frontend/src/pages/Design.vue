@@ -56,24 +56,28 @@
           v-if="sections.data"
           class="flex flex-1 flex-col justify-between overflow-hidden"
         >
-          <SidePanelLayout
-            v-model="design.data"
-            :sections="sections.data"
-            doctype="Design"
-            @update="updateField"
-            @reload="sections.reload"
-          />
+        <SidePanelLayout
+          :sections="sections.data"
+          doctype="Design"
+          :docname="design.data.name"
+          @reload="sections.reload"
+        />
         </div>
       </Resizer>
     </div>
 
+    <ErrorPage
+    v-else-if="errorTitle"
+    :errorTitle="errorTitle"
+    :errorMessage="errorMessage"
+  />
     <QuickEntryModal
-      v-if="showQuickEntryModal"
-      v-model="showQuickEntryModal"
-      doctype="Design"
-      :onlyRequired="true"
-    />
-    <FilesUploader
+    v-if="showQuickEntryModal"
+    v-model="showQuickEntryModal"
+    doctype="Design"
+    :onlyRequired="true"
+  />
+  <FilesUploader
     v-if="design.data?.name"
     v-model="showFilesUploader"
     doctype="Design"
@@ -87,6 +91,7 @@
   />
   </template>
   <script setup>
+  import ErrorPage from '@/components/ErrorPage.vue'
   import Icon from '@/components/Icon.vue'
   import Resizer from '@/components/Resizer.vue'
   import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
@@ -107,7 +112,6 @@
   import QuickEntryModal from '@/components/Modals/QuickEntryModal.vue'
   import CustomActions from '@/components/CustomActions.vue'
   import {
-    createToast,
     setupAssignees,
     setupCustomizations,
     copyToClipboard,
@@ -130,6 +134,7 @@
     Breadcrumbs,
     call,
     usePageMeta,
+    toast
   } from 'frappe-ui'
   import { useOnboarding } from 'frappe-ui/frappe'
   import { ref, reactive, computed, onMounted, watch } from 'vue'
@@ -154,19 +159,25 @@
     },
   })
   
+  const errorTitle = ref('')
+  const errorMessage = ref('')
+
   const design = createResource({
     url: 'crm.apiCpq.design.get_doc_details',
     params: {doctype:"Design", name: props.designId },
     cache: ['design', props.designId],
     onSuccess: (data) => {
+       errorTitle.value = ''
+    errorMessage.value = ''
       setupAssignees(design)
       setupCustomizations(design, {
         doc: data,
         $dialog,
         $socket,
         router,
+        toast,
         updateField,
-        createToast,
+        createToast: toast.create,
         deleteDoc: deleteDesign,
         resource: { design, sections },
         call,
@@ -200,20 +211,11 @@
       design.reload()
       sections.reload()
       reload.value = true
-      createToast({
-        title: __('Design updated'),
-        icon: 'check',
-        iconClasses: 'text-green-600',
-      })
+      toast.success( __('Design updated'))
       callback?.()
     },
     onError: (err) => {
-      createToast({
-        title: __('Error updating design'),
-        text: __(err.messages?.[0]),
-        icon: 'x',
-        iconClasses: 'text-red-600',
-      })
+      toast.error( __('Error updating design'))
     },
   })
 }
@@ -221,12 +223,7 @@
   function validateRequired(fieldname, value) {
     let meta = design.data.fields_meta || {}
     if (meta[fieldname]?.reqd && !value) {
-      createToast({
-        title: __('Error Updating design'),
-        text: __('{0} is a required field', [meta[fieldname].label]),
-        icon: 'x',
-        iconClasses: 'text-ink-red-4',
-      })
+      toast.error( __('{0} is a required field', [meta[fieldname].label]))
       return true
     }
     return false
@@ -372,20 +369,11 @@
     onSuccess: (data) => {
       isItemCreating.value = false;
       updateField("item", data)
-      createToast({
-        title: __('Item created successfully'),
-        icon: 'check',
-        iconClasses: 'text-green-600',
-      })
+      toast.success(__('Item created successfully'))
     },
     onError: (err) => {
       isItemCreating.value = false;
-      createToast({
-        title: __('Error creating item'),
-        text: __(err.messages?.[0] || 'Failed to create item'),
-        icon: 'x',
-        iconClasses: 'text-red-600',
-      })
+      toast.error(__('Error creating item'))
     },
   }).fetch()
 }
@@ -406,6 +394,7 @@ watch(
     if (!Number.isNaN(newCost) && !Number.isNaN(oldCost)) {
       if (newCost !== oldCost) {
         if (newCost > 0){
+          console.log("triggered")
           getTotalCost()
         } else {
           updateField("total_cost", 0);
@@ -434,7 +423,6 @@ watch(
   () => sections.data,
   (val) => {
     if (val && design.data?.item) {
-      console.log("design")
       val.forEach(section => {
         section.columns?.forEach(column => {
           column.fields?.forEach(field => {

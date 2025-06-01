@@ -185,6 +185,7 @@
   watch(
     () => item.item_code, 
     (newValue) => {
+      console.log("item code change", newValue)
       item.item_name = newValue
     }
   )

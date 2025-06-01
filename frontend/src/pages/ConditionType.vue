@@ -92,7 +92,6 @@
   import QuickEntryModal from '@/components/Modals/QuickEntryModal.vue'
   import CustomActions from '@/components/CustomActions.vue'
   import {
-    createToast,
     setupAssignees,
     setupCustomizations,
     copyToClipboard,
@@ -111,6 +110,7 @@
     Breadcrumbs,
     call,
     usePageMeta,
+    toast
   } from 'frappe-ui'
   import { ref, reactive, computed, onMounted, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
@@ -141,8 +141,9 @@
         $dialog,
         $socket,
         router,
+        toast,
         updateField,
-        createToast,
+        createToast: toast.create,
         deleteDoc: deleteCondType,
         resource: { condType, sections },
         call,
@@ -175,20 +176,11 @@
       onSuccess: () => {
         condType.reload()
         reload.value = true
-        createToast({
-          title: __('Condition Type updated'),
-          icon: 'check',
-          iconClasses: 'text-ink-green-3',
-        })
+        toast.success(__('Condition Type updated'))
         callback?.()
       },
       onError: (err) => {
-        createToast({
-          title: __('Error updating Condition Type'),
-          text: __(err.messages?.[0]),
-          icon: 'x',
-          iconClasses: 'text-ink-red-4',
-        })
+        toast.error(__('Error updating Condition Type'))
       },
     })
   }
@@ -196,12 +188,7 @@
   function validateRequired(fieldname, value) {
     let meta = condType.data.fields_meta || {}
     if (meta[fieldname]?.reqd && !value) {
-      createToast({
-        title: __('Error Updating Condition Type'),
-        text: __('{0} is a required field', [meta[fieldname].label]),
-        icon: 'x',
-        iconClasses: 'text-ink-red-4',
-      })
+      toast.success(__('Error Updating Condition Type'))
       return true
     }
     return false

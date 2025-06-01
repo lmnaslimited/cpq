@@ -188,6 +188,7 @@
         //construction of param required
         //to get the pricelist's rate for 
         //selected selling_price_list and item_code
+        quotation.items[index].item_name = value.item_code
         const params = {
             doctype: "Item Price",
             fields: ['price_list_rate'],

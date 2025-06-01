@@ -7,13 +7,15 @@ from crm.fcrm.doctype.crm_form_script.crm_form_script import get_form_script
 
 @frappe.whitelist()
 def get_doc_details(doctype, name):
-	id_doc = frappe.get_doc(doctype, name).as_dict()
+    id_doc = frappe.get_doc(doctype, name)
+    id_doc.check_permission("read")
 
-	id_doc["fields_meta"] = get_fields_meta(doctype)
-	id_doc["_form_script"] = get_form_script(doctype)
-	id_doc["_assign"] = get_assigned_users(doctype, id_doc.name)
-	return id_doc
+    id_doc = id_doc.as_dict()
+    id_doc["fields_meta"] = get_fields_meta(doctype)
+    id_doc["_form_script"] = get_form_script(doctype)
+    id_doc["_assign"] = get_assigned_users(doctype, id_doc["name"])
 
+    return id_doc
 
 '''
 This API is replicated version of original delete_items

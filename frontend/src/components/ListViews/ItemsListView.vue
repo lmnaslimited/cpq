@@ -14,6 +14,7 @@
         resizeColumn: options.resizeColumn,
       }"
       row-key="name"
+      @update:selections="(selections) => emit('selectionsChanged', selections)"
     >
       <ListHeader
         class="sm:mx-5 mx-3"
@@ -173,13 +174,13 @@
     ListFooter,
     Dropdown,
     Tooltip,
-    createResource
+    createResource,
+    toast
   } from 'frappe-ui'
   import { sessionStore } from '@/stores/session'
   import { ref, computed, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { capture } from '@/telemetry'
-  import { createToast } from '@/utils'
   
   const props = defineProps({
     rows: {
@@ -209,6 +210,7 @@
     'applyFilter',
     'applyLikeFilter',
     'likeDoc',
+    'selectionsChanged',
   ])
   
   const route = useRoute()
@@ -255,29 +257,17 @@ const handleDelete = (selections, unselectAll) => {
     onSuccess(data){
       if(data.status == 'success'){
         capture('bulk_delete')
-        createToast({
-          title: __('Deleted successfully'),
-          icon: 'check',
-          iconClasses: 'text-green-600',
-        })
+        toast.success(__('Deleted successfully'))
         unselectAll()
         list.value.reload()
       }
       else if(data.status == 'error'){
-        createToast({
-          title: __('Unable to Delete'),
-          icon: 'check',
-          iconClasses: 'text-green-600',
-        })
+        toast.error(__('Unable to Delete'))
         list.value.reload()
       }
     },
     onError(data){
-      createToast({
-        title: __('Unable to Delete'),
-        icon: 'check',
-        iconClasses: 'text-green-600',
-      })
+      toast.error(__('Unable to Delete'))
     }
   }).submit();
 }

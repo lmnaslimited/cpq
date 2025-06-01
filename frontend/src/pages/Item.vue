@@ -43,36 +43,41 @@
           v-if="sections.data"
           class="flex flex-1 flex-col justify-between overflow-hidden"
         >
-          <SidePanelLayout
-            v-model="item.data"
-            :sections="sections.data"
-            doctype="Item"
-            @update="updateField"
-            @reload="sections.reload"
-          />
+        <SidePanelLayout
+          :sections="sections.data"
+          doctype="Item"
+          :docname="item.data.name"
+          @reload="sections.reload"
+        />
         </div>
       </Resizer>
     </div>
+    <ErrorPage
+    v-else-if="errorTitle"
+    :errorTitle="errorTitle"
+    :errorMessage="errorMessage"
+  />
     <QuickEntryModal
-      v-if="showQuickEntryModal"
-      v-model="showQuickEntryModal"
-      doctype="Item"
-      :onlyRequired="true"
-    />
-    <FilesUploader
-      v-if="item.data?.name"
-      v-model="showFilesUploader"
-      doctype="Item"
-      :docname="item.data.name"
-      @after="
-        () => {
-          activities?.all_activities?.reload()
-          changeTabTo('attachments')
-        }
-      "
-    />
+    v-if="showQuickEntryModal"
+    v-model="showQuickEntryModal"
+    doctype="Item"
+    :onlyRequired="true"
+  />
+  <FilesUploader
+    v-if="item.data?.name"
+    v-model="showFilesUploader"
+    doctype="Item"
+    :docname="item.data.name"
+    @after="
+      () => {
+        activities?.all_activities?.reload()
+        changeTabTo('attachments')
+      }
+    "
+  />
   </template>
   <script setup>
+  import ErrorPage from '@/components/ErrorPage.vue'
   import Icon from '@/components/Icon.vue'
   import Resizer from '@/components/Resizer.vue'
   import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
@@ -92,7 +97,6 @@
   import QuickEntryModal from '@/components/Modals/QuickEntryModal.vue'
   import CustomActions from '@/components/CustomActions.vue'
   import {
-    createToast,
     setupAssignees,
     setupCustomizations,
     copyToClipboard,
@@ -114,6 +118,7 @@
     Breadcrumbs,
     call,
     usePageMeta,
+    toast
   } from 'frappe-ui'
   import { useOnboarding } from 'frappe-ui/frappe'
   import { ref, reactive, computed, onMounted, watch } from 'vue'
@@ -135,25 +140,39 @@
       required: true,
     },
   })
+
+  const errorTitle = ref('')
+const errorMessage = ref('')
   
   const item = createResource({
     url: 'crm.apiCpq.design.get_doc_details',
     params: {doctype: "Item", name: props.itemId },
     cache: ['item', props.itemId],
     onSuccess: (data) => {
+      errorTitle.value = ''
+    errorMessage.value = ''
       setupAssignees(item)
       setupCustomizations(item, {
         doc: data,
         $dialog,
         $socket,
         router,
+        toast,
         updateField,
-        createToast,
+        createToast: toast.create,
         deleteDoc: deleteItem,
         resource: { item, sections },
         call,
       })
     },
+    onError: (err) => {
+    if (err.messages?.[0]) {
+      errorTitle.value = __('Not permitted')
+      errorMessage.value = __(err.messages?.[0])
+    } else {
+      router.push({ name: 'Items' })
+    }
+  },
   })
   
   onMounted(() => {
@@ -182,20 +201,11 @@
         item.reload()
         sections.reload()
         reload.value = true
-        createToast({
-          title: __('Item updated'),
-          icon: 'check',
-          iconClasses: 'text-ink-green-3',
-        })
+        toast.success(__('Item updated'))
         callback?.()
       },
       onError: (err) => {
-        createToast({
-          title: __('Error updating item'),
-          text: __(err.messages?.[0]),
-          icon: 'x',
-          iconClasses: 'text-ink-red-4',
-        })
+        toast.error(__('Error updating item'))
       },
     })
   }
@@ -203,12 +213,7 @@
   function validateRequired(fieldname, value) {
     let meta = item.data.fields_meta || {}
     if (meta[fieldname]?.reqd && !value) {
-      createToast({
-        title: __('Error Updating Item'),
-        text: __('{0} is a required field', [meta[fieldname].label]),
-        icon: 'x',
-        iconClasses: 'text-ink-red-4',
-      })
+      toast.error(__('{0} is a required field', [meta[fieldname].label]))
       return true
     }
     return false

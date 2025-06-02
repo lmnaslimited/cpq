@@ -345,7 +345,8 @@ fixtures = [
                 (
                     "Get Meta Data of a Doctype",
                     "Lead Questionnaire Prompt",
-                    "Lead Status Tracker"
+                    "Lead Status Tracker",
+                    "Create Quotation From Deal"
 				)
 			]
 		]
@@ -371,7 +372,9 @@ fixtures = [
                 "in",
                 (
                     "CRM Lead Questionnaire",
-                    "Quotation from Deal"
+                    "Quotation from Deal",
+                    "Print Preview",
+                    "Design Total Cost Compute"
 				)
 			]
 		]

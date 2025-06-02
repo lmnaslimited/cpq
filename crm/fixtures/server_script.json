@@ -55,5 +55,24 @@
   "reference_doctype": "CRM Lead",
   "script": "# Predict the status of the lead based on the answer in lead questionnaire\n# if custom_lead_questionnaire is not empty\nif doc.custom_lead_questionnaire and len(doc.custom_lead_questionnaire) > 0:\n    #loop through each row and add +1 if the anser is Yes\n    l_yes = sum(1 for ld_row in doc.custom_lead_questionnaire if ld_row.answer == 'Yes')\n    # get the total length of the child table (lead questionnaire)\n    l_total = len(doc.custom_lead_questionnaire)\n    \n    # if the yes count is greater than half of the question length\n    # the lead is Qualified\n    if l_yes > l_total / 2:\n        doc.status = 'Qualified'\n    # if the yes count is less than half of the question length\n    # the lead is Unqualified\n    elif l_yes < l_total / 2:\n        doc.status = 'Unqualified'\n    # this line is commented because there are other status in crm lead(contacted, new)\n    # # if the yes count is less than half of the question length\n    # # the lead is Nurture\n    # elif l_yes == l_total/2:\n    #     doc.status = 'Nurture'\n",
   "script_type": "DocType Event"
+ },
+ {
+  "allow_guest": 0,
+  "api_method": "create_quotation",
+  "cron_format": null,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Server Script",
+  "doctype_event": "Before Insert",
+  "enable_rate_limit": 0,
+  "event_frequency": "All",
+  "modified": "2025-06-03 01:22:53.630106",
+  "module": null,
+  "name": "Create Quotation From Deal",
+  "rate_limit_count": 5,
+  "rate_limit_seconds": 86400,
+  "reference_doctype": null,
+  "script": "#get the params\nld_docs = frappe.form_dict.get('id_doc')\nla_products = ld_docs['products'] #extract only products array\n#get all the design value from the products table as array\nla_unique = set(it_data['custom_design'] for it_data in la_products if 'custom_design' in it_data)\n#get the item and total_cost value from the list of designs\nla_items = frappe.get_list('Design', filters={\"name\": [\"in\", list(la_unique)]}, fields=['item', \"total_cost\"])\n#create a new quotation\nld_quotation = frappe.get_doc(dict(\n\t\tdoctype = 'Quotation',\n\t\tquotation_to = ld_docs['doctype'],\n\t\tparty_name = ld_docs['name'],\n\t\ttransaction_date = frappe.utils.nowdate(),\n\t\titems= [{'item_code': ld_item['item'], 'qty': 1, 'rate': ld_item['total_cost']} for ld_item in la_items]\n\t)).insert()\nfrappe.response['message'] = ld_quotation\nfrappe.flag = ld_quotation",
+  "script_type": "API"
  }
 ]

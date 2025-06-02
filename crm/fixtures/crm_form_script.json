@@ -16,9 +16,31 @@
   "dt": "CRM Deal",
   "enabled": 1,
   "is_standard": 0,
-  "modified": "2025-06-02 16:53:54.036872",
+  "modified": "2025-06-02 22:11:40.860701",
   "name": "Quotation from Deal",
-  "script": "function setupForm({ doc, router }) {\n    return {\n        actions: [{\n            \"label\": \"Create Quotation\",\n            \"onClick\": () => {\n                router.push({ name: \"Quotations\" });\n            }\n        } ],\n    }\n}",
+  "script": "function setupForm({ doc, call, router }) {\n    return {\n        actions: [{\n            \"label\": \"Create Quotation\",\n            \"onClick\": () => {\n                call('create_quotation',{id_doc: doc}).then((response)=> {\n                    router.push({ name: \"Quotation\", params: { quotationId: response.name } });\n                    \n                });\n            }\n        } ],\n    };\n}",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "CRM Form Script",
+  "dt": "Quotation",
+  "enabled": 1,
+  "is_standard": 0,
+  "modified": "2025-06-02 21:28:34.974086",
+  "name": "Print Preview",
+  "script": "function setupForm({ doc }) {\n    return {\n        actions: [{\n            \"label\": __('Print Preview'),\n            \"onClick\": () => {\n                let URL = `/app/print/Quotation/${doc.name}`;\n                window.open(URL, '_blank');\n        \n            }\n        }],\n    };\n}",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "CRM Form Script",
+  "dt": "Design",
+  "enabled": 1,
+  "is_standard": 0,
+  "modified": "2025-06-03 01:25:55.834645",
+  "name": "Design Total Cost Compute",
+  "script": "class Design {\n    //on change of direct material cost\n    async direct_material_cost(){\n        //call the pricing api\n        let LtotalCost = await call('crm.apiCpq.pricing.get_total_cost_from_direct_material_cost',\n            { i_direct_material_cost: this.doc.direct_material_cost })\n        //update the total cost\n        this.doc.total_cost = LtotalCost.total_cost\n    }\n}\n",
   "view": "Form"
  }
 ]

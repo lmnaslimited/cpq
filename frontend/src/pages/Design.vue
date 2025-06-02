@@ -167,8 +167,8 @@
     params: {doctype:"Design", name: props.designId },
     cache: ['design', props.designId],
     onSuccess: (data) => {
-       errorTitle.value = ''
-    errorMessage.value = ''
+      errorTitle.value = ''
+      errorMessage.value = ''
       setupAssignees(design)
       setupCustomizations(design, {
         doc: data,
@@ -182,6 +182,14 @@
         resource: { design, sections },
         call,
       })
+    },
+    onError: (err) => {
+      if (err.messages?.[0]) {
+        errorTitle.value = __('Not permitted')
+        errorMessage.value = __(err.messages?.[0])
+      } else {
+        router.push({ name: 'Designs' })
+      }
     },
   })
   
@@ -384,40 +392,36 @@ const viewItem = async () => {
   }
 };
 
+//durring cpq demo the watch is not working as it need 2 manual refresh to update the ui
 //direct material cost
-watch(
-  () => design.data?.direct_material_cost,
-  (newValue, oldValue) => {
-    const newCost = Number(newValue);
-    const oldCost = Number(oldValue);
+// watch(
+//   () => design.data?.direct_material_cost,
+//   (newValue, oldValue) => {
+//     const newCost = Number(newValue);
+//     const oldCost = Number(oldValue);
 
-    if (!Number.isNaN(newCost) && !Number.isNaN(oldCost)) {
-      if (newCost !== oldCost) {
-        if (newCost > 0){
-          console.log("triggered")
-          getTotalCost()
-        } else {
-          updateField("total_cost", 0);
-        }
-      } else {
+//     if (!Number.isNaN(newCost) && !Number.isNaN(oldCost)) {
+//       if (newCost !== oldCost) {
+//         if (newCost > 0){
+//           getTotalCost()
+//         } else {
+//           updateField("total_cost", 0);
+//         }
+//       } 
+//     } 
+//   },
+//   { immediate: false }
+// );
 
-      }
-    } else {
-
-    }
-  },
-  { immediate: false }
-);
-
-const getTotalCost = () => {
-  createResource({
-    url: 'crm.apiCpq.pricing.get_total_cost_from_direct_material_cost',
-    params: {  i_direct_material_cost: design.data.direct_material_cost },
-    onSuccess: (data) => {
-      updateField("total_cost", data.total_cost);
-    }
-  }).fetch()
-}
+// const getTotalCost = () => {
+//   createResource({
+//     url: 'crm.apiCpq.pricing.get_total_cost_from_direct_material_cost',
+//     params: {  i_direct_material_cost: design.data.direct_material_cost },
+//     onSuccess: (data) => {
+//       updateField("total_cost", data.total_cost);
+//     }
+//   }).fetch()
+// }
 
 watch(
   () => sections.data,

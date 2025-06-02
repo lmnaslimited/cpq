@@ -23,10 +23,9 @@
           />
           <p
             :id="field.fieldname"
-            class="text-gray-600 rounded px-2"
+            class="text-gray-600 rounded px-2 bg-surface-gray-2 dark:[color-scheme:dark]"
             contenteditable="true"
             @input="fnUpdateRangeValue(field.fieldname, $event.target.innerText, field.min, field.max, field.step)"
-            style="background-color: #f5f5f5;"
           >
             {{ data[field.fieldname] }}
           </p>

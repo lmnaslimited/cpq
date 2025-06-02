@@ -1,5 +1,7 @@
 <template>
   <div v-if="field.visible" class="field">
+    <!-- Changed for lensCPQ -->
+    <slot name="custom-fields" :field="field">
     <div v-if="field.fieldtype != 'Check'" class="mb-2 text-sm text-ink-gray-5">
       {{ __(field.label) }}
       <span
@@ -211,6 +213,7 @@
       :description="field.description"
       @change="fieldChange($event.target.value, field)"
     />
+  </slot> <!-- Changed for lensCPQ -->
   </div>
 </template>
 <script setup>

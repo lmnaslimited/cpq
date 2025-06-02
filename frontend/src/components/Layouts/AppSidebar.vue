@@ -188,6 +188,10 @@ import router from '@/router'
 import { useStorage } from '@vueuse/core'
 import { ref, reactive, computed, h, markRaw, onMounted } from 'vue'
 
+//lenCPQ Begin
+import { cpqLinks, getCustomIcon } from '@/cpqRouter'
+//lenCPQ End
+
 const { getPinnedViews, getPublicViews } = viewsStore()
 const { toggle: toggleNotificationPanel } = notificationsStore()
 
@@ -237,6 +241,7 @@ const links = [
     icon: Email2Icon,
     to: 'Email Templates',
   },
+  ...cpqLinks //lensCPQ Begin
 ]
 
 const allViews = computed(() => {
@@ -297,7 +302,7 @@ function getIcon(routeName, icon) {
     case 'Call Logs':
       return PhoneIcon
     default:
-      return PinIcon
+      return getCustomIcon(routeName) || PinIcon //lensCPQ Begin
   }
 }
 

@@ -26,7 +26,7 @@ export const validateRangeIncrement = (name, value, min, max, step) => {
     //   if ((numValue - numMin) % numStep !== 0) return `Value should increment by ${step}`
     // }
 
-    // Validate if the value follows the step increment
+  // Validate if the value follows the step increment
   const diff = (numValue - numMin)
   const precision = Math.max((step.toString().split('.')[1]?.length) || 0, 6)
   const rounded = parseFloat((diff / numStep).toFixed(precision))
@@ -35,7 +35,7 @@ export const validateRangeIncrement = (name, value, min, max, step) => {
     return `Value should increment by ${step}`
   }
    // Disallow trailing decimal like "5."
-   if (value.includes('.') && value.endsWith('.')) {
+   if (String(value).includes('.') && String(value).endsWith('.')) {
     return 'Invalid Input. Please enter digits after decimal point.'
   }
   

@@ -90,6 +90,15 @@ let slaSection = computed(() => {
         tooltipText: tooltipText,
         color: color,
       },
+      //customized for cpq demo
+      {
+        label: 'Next Response',
+        type: 'Badge',
+        value: __(tooltipText),
+        tooltipText: tooltipText,
+        color: 'orange',
+      },
+      //end of customization
       {
         label: 'Status',
         value: data.value.communication_status,

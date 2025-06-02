@@ -534,7 +534,7 @@ const changeTabTo = (tabName) => {
 }
 
 const all_activities = createResource({
-  url: 'crm.api.activities.get_activities',
+  url: 'crm.apiCpq.activitiesCpq.get_activities_cpq', //changed the url for lensCpq,
   params: { name: doc.value.data.name },
   cache: ['activity', doc.value.data.name],
   auto: true,

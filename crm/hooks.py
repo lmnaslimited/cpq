@@ -330,7 +330,8 @@ fixtures = [
                     "CRM Lead-custom_prompt",
                     "CRM Lead-custom_question_type",
                     "CRM Lead-custom_lead_tracker",
-                    "CRM Lead-custom_lead_questionnaire"
+                    "CRM Lead-custom_lead_questionnaire",
+                    "CRM Products-custom_design"
                 )
             ]
          ]
@@ -369,7 +370,8 @@ fixtures = [
                 "name",
                 "in",
                 (
-                    "CRM Lead Questionnaire"
+                    "CRM Lead Questionnaire",
+                    "Quotation from Deal"
 				)
 			]
 		]

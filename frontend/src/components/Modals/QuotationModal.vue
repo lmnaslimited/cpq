@@ -191,7 +191,7 @@
         quotation.items[index].item_name = value.item_code
         const params = {
             doctype: "Item Price",
-            fields: ['price_list_rate'],
+            fields: ['price_list_rate', 'uom'],
             filters: {
               item_code: value.item_code,
               price_list: quotation.selling_price_list
@@ -202,8 +202,10 @@
             // Ensure we're getting the correct price
             //since it return as array
             const price = res[0].price_list_rate;
+            const uom = res[0].uom
             // Update the rate in the quotation item
             quotation.items[index].rate = price;
+            quotation.items[index].uom = uom
           }
         }).catch(err => {
           console.log('Error fetching price:', err);

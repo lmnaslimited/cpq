@@ -231,7 +231,7 @@ import { flt } from '@/utils/numberFormat.js'
 import { getMeta } from '@/stores/meta'
 import { usersStore } from '@/stores/users'
 import { useDocument } from '@/data/document'
-import { Tooltip, DatePicker, DateTimePicker } from 'frappe-ui'
+import { Tooltip, DatePicker, DateTimePicker, createResource } from 'frappe-ui'
 import { computed, provide, inject } from 'vue'
 
 const props = defineProps({
@@ -337,12 +337,32 @@ const getPlaceholder = (field) => {
 function fieldChange(value, df) {
   data.value[df.fieldname] = value
 
+  //customized for cpq demo
+  if(doctype == 'Design'){
+    fnConditionValue(data)
+  }
+  // end of customization
+
   if (isGridRow) {
     triggerOnChange(df.fieldname, data.value)
   } else {
     triggerOnChange(df.fieldname)
   }
 }
+
+// customized for cpq demo
+async function fnConditionValue(data){
+    createResource({
+      url: '/api/method/get_condition_value',
+      params: {data: data.value},
+      onSuccess(response){
+        response.forEach(field => {
+          data.value[field.fieldName] = field.value
+      })
+      }
+    }).fetch()
+  }
+//end of customization
 
 function getDataValue(value, field) {
   if (field.fieldtype === 'Duration') {

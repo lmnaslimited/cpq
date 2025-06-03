@@ -106,8 +106,13 @@
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-06-03 16:55:49.285293",
+ "links": [
+  {
+   "link_doctype": "BOM",
+   "link_fieldname": "custom_design"
+  }
+ ],
+ "modified": "2025-06-03 23:52:11.858333",
  "modified_by": "Administrator",
  "module": "CPQ",
  "name": "Design",

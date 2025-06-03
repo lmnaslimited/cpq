@@ -6,9 +6,11 @@
  "engine": "InnoDB",
  "field_order": [
   "condition_type",
-  "access_key",
   "input_value",
+  "column_break_gway",
+  "access_key",
   "output_value",
+  "section_break_eeyg",
   "input_condition_value",
   "output_condition_value"
  ],
@@ -27,12 +29,14 @@
   {
    "fieldname": "input_value",
    "fieldtype": "Data",
-   "label": "Input Value"
+   "label": "Input Value",
+   "read_only": 1
   },
   {
    "fieldname": "output_value",
    "fieldtype": "Data",
-   "label": "Output Value"
+   "label": "Output Value",
+   "read_only": 1
   },
   {
    "fieldname": "input_condition_value",
@@ -45,11 +49,19 @@
    "fieldtype": "Table",
    "label": "Output Condition Value",
    "options": "Output Condition Value"
+  },
+  {
+   "fieldname": "column_break_gway",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_eeyg",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-07 23:26:06.178215",
+ "modified": "2025-06-03 23:38:03.328081",
  "modified_by": "Administrator",
  "module": "CPQ",
  "name": "Condition Value",
@@ -68,6 +80,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

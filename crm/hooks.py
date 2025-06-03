@@ -348,7 +348,8 @@ fixtures = [
                     "Lead Questionnaire Prompt",
                     "Lead Status Tracker",
                     "Create Quotation From Deal",
-                    "Update Item Price And Design"
+                    "Update Item Price And Design",
+                    "Condition Value"
 				)
 			]
 		]

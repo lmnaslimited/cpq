@@ -8,11 +8,13 @@
  "field_order": [
   "document_reference",
   "condition_type",
+  "naming_series",
+  "column_break_vxra",
   "enable",
   "is_formula_based",
   "is_api_based",
   "is_value_based",
-  "naming_series",
+  "section_break_khpi",
   "input_sequence",
   "output_sequence"
  ],
@@ -61,6 +63,7 @@
    "default": "COND.####",
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Series",
    "options": "COND.####"
   },
@@ -75,11 +78,24 @@
    "fieldtype": "Table",
    "label": "Output Sequence",
    "options": "Output Sequence"
+  },
+  {
+   "fieldname": "column_break_vxra",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_khpi",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-05-04 18:11:49.224543",
+ "links": [
+  {
+   "link_doctype": "Condition Value",
+   "link_fieldname": "condition_type"
+  }
+ ],
+ "modified": "2025-06-03 23:53:49.249648",
  "modified_by": "Administrator",
  "module": "CPQ",
  "name": "Condition Type",
@@ -99,6 +115,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

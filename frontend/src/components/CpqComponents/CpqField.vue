@@ -39,6 +39,7 @@
   import Field from '@/components/FieldLayout/Field.vue'
   import { reactive, watch, provide, computed } from 'vue'
   import { validateRangeIncrement } from '@/cpqUtils.js'
+  import { createResource } from 'frappe-ui' //customize for cpq demo
   
   const props = defineProps({
     sections: Array,
@@ -75,6 +76,12 @@
     const L_ERROR = validateRangeIncrement(iName, iValue, iMin, iMax, iStep)
     rangeErrors[iName] = L_ERROR
     props.data[iName] = iValue
+
+    // customize for cpq demo
+    if(props.doctype == 'Design'){
+      fnConditionValue(props.data)
+    }
+    //end of customization
   }
   
   // Update range input from the text below and revalidate
@@ -86,6 +93,11 @@
     if (LA_RANGE_ELEMENT.length > 0) {
       LA_RANGE_ELEMENT[0].value = iValue
     }
+     // customize for cpq demo
+     if(props.doctype == 'Design'){
+      fnConditionValue(props.data)
+    }
+    //end of customization
   }
   
   // Set initial values for range fields when sections change
@@ -110,7 +122,21 @@
       
     }
   }
-  
+
+  //customized for cpq demo
+  async function fnConditionValue(data){
+    createResource({
+      url: '/api/method/get_condition_value',
+      params: {data: data},
+      onSuccess(response){
+        response.forEach(field => {
+          props.data[field.fieldName] = field.value
+      })
+      }
+    }).fetch()
+  }
+  //end of customization
+
   watch(
   () => props.sections,
   () => {

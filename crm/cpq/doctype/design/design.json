@@ -9,12 +9,17 @@
   "details",
   "naming_series",
   "design_template",
-  "status",
   "item",
-  "design_attributes",
+  "column_break_rkpw",
+  "status",
   "created_by",
+  "section_break_jahy",
+  "design_attributes",
+  "cost_deatils_tab",
   "price",
   "direct_material_cost",
+  "operating_cost",
+  "column_break_rmdy",
   "total_cost"
  ],
  "fields": [
@@ -70,17 +75,39 @@
   {
    "fieldname": "direct_material_cost",
    "fieldtype": "Currency",
-   "label": "Direct Material Cost"
+   "label": "Raw Material Cost"
   },
   {
    "fieldname": "total_cost",
    "fieldtype": "Currency",
    "label": "Total Cost"
+  },
+  {
+   "fieldname": "operating_cost",
+   "fieldtype": "Currency",
+   "label": "Operating Cost"
+  },
+  {
+   "fieldname": "cost_deatils_tab",
+   "fieldtype": "Tab Break",
+   "label": "Cost Deatils"
+  },
+  {
+   "fieldname": "column_break_rkpw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_jahy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_rmdy",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-29 15:56:20.505067",
+ "modified": "2025-06-03 16:55:49.285293",
  "modified_by": "Administrator",
  "module": "CPQ",
  "name": "Design",
@@ -100,6 +127,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

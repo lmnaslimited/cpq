@@ -331,7 +331,8 @@ fixtures = [
                     "CRM Lead-custom_question_type",
                     "CRM Lead-custom_lead_tracker",
                     "CRM Lead-custom_lead_questionnaire",
-                    "CRM Products-custom_design"
+                    "CRM Products-custom_design",
+                    "BOM-custom_design"
                 )
             ]
          ]
@@ -346,7 +347,8 @@ fixtures = [
                     "Get Meta Data of a Doctype",
                     "Lead Questionnaire Prompt",
                     "Lead Status Tracker",
-                    "Create Quotation From Deal"
+                    "Create Quotation From Deal",
+                    "Update Item Price And Design"
 				)
 			]
 		]
@@ -359,7 +361,8 @@ fixtures = [
                 "in",
                 (
                     "Condition Type",
-                    "Condition Value"
+                    "Condition Value",
+                    "Update Price List"
 				)
 			]
 		]

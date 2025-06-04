@@ -27,9 +27,9 @@
   "dt": "Quotation",
   "enabled": 1,
   "is_standard": 0,
-  "modified": "2025-06-02 21:28:34.974086",
+  "modified": "2025-06-04 13:08:51.203136",
   "name": "Print Preview",
-  "script": "function setupForm({ doc }) {\n    return {\n        actions: [{\n            \"label\": __('Print Preview'),\n            \"onClick\": () => {\n                let URL = `/app/print/Quotation/${doc.name}`;\n                window.open(URL, '_blank');\n        \n            }\n        }],\n    };\n}",
+  "script": "function setupForm({ doc }) {\n    return {\n        actions: [{\n            \"label\": __('Print Preview'),\n            \"onClick\": () => {\n                let URL = `/app/print/Quotation/${doc.name}`;\n                window.open(URL, '_blank');\n        \n            }\n        },\n        {\n            \"label\": __('Go To Desk'),\n            \"onClick\": () => {\n                let URL = `/app/quotation/${doc.name}`;\n                window.open(URL, '_blank');\n        \n            }\n        }\n        ],\n    };\n}",
   "view": "Form"
  },
  {

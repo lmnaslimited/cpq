@@ -81,6 +81,9 @@
   import { usersStore } from '@/stores/users'
   import { formatDate, timeAgo, formatTime } from '@/utils'
   import { ref, computed, reactive} from 'vue'
+  import { cpqStatuses } from '@/cpqStores/statuses'  //customized for cpq demo
+
+  const { getDesignStatus } = cpqStatuses() //customized for cpq demo
   
   const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
     getMeta('Design')
@@ -101,10 +104,51 @@
   // Rows
   const rows = computed(() => {
     if (!designs.value?.data?.data) return []
+    if (designs.value.data.view_type === 'group_by') {
+    if (!designs.value?.data.group_by_field?.fieldname) return []
+    return getGroupedByRows(
+      designs.value?.data.data,
+      designs.value?.data.group_by_field,
+      designs.value.data.columns,
+    )
+  }else{
     
       return parseRows(designs.value?.data.data, designs.value.data.columns)
+  }
  
   })
+
+  function getGroupedByRows(listRows, groupByField, columns) {
+    let groupedRows = []
+
+    groupByField.options?.forEach((option) => {
+      let filteredRows = []
+
+      if (!option) {
+        filteredRows = listRows.filter((row) => !row[groupByField.fieldname])
+      } else {
+        filteredRows = listRows.filter(
+          (row) => row[groupByField.fieldname] == option,
+        )
+      }
+
+      let groupDetail = {
+        label: groupByField.label,
+        group: option || __(' '),
+        collapsed: false,
+        rows: parseRows(filteredRows, columns),
+      }
+      if (groupByField.fieldname == 'status') {
+        groupDetail.icon = () =>
+          h(IndicatorIcon, {
+            class: getDesignStatus(option)?.color,
+          })
+      }
+      groupedRows.push(groupDetail)
+    })
+
+    return groupedRows || listRows
+  }
     
   function parseRows(rows, columns = []) {
     let view_type = designs.value.data.view_type
@@ -139,6 +183,12 @@
         if (fieldType && fieldType == 'Percent') {
           _rows[row] = getFormattedPercent(row, design)
         }
+        if (row == 'status') {
+        _rows[row] = {
+          label: design.status,
+          color: getDesignStatus(design.status)?.color,
+        }
+      }
   
       if (['modified', 'creation'].includes(row)) {
           _rows[row] = {

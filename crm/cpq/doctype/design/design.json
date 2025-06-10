@@ -44,9 +44,9 @@
   },
   {
    "fieldname": "status",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Status",
-   "options": "Draft"
+   "options": "CRM Design Status"
   },
   {
    "fieldname": "item",
@@ -112,7 +112,7 @@
    "link_fieldname": "custom_design"
   }
  ],
- "modified": "2025-06-03 23:52:11.858333",
+ "modified": "2025-06-09 22:09:01.398192",
  "modified_by": "Administrator",
  "module": "CPQ",
  "name": "Design",

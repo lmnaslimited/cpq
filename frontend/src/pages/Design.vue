@@ -17,6 +17,25 @@
           :data="design.data"
           doctype="Design"
         />
+        <!-- customized for cpq demo -->
+        <Dropdown
+        :options="cpqStatusOptions('design', updateField, design.data._customStatuses)"
+      >
+        <template #default="{ open }">
+          <Button :label="design.data.status">
+            <template #prefix>
+              <IndicatorIcon :class="getDesignStatus(design.data.status).color" />
+            </template>
+            <template #suffix>
+              <FeatherIcon
+                :name="open ? 'chevron-up' : 'chevron-down'"
+                class="h-4"
+              />
+            </template>
+          </Button>
+        </template>
+      </Dropdown>
+      <!-- end of customization -->
         <Button
             v-if="!design.data.item"
             :label="__('Create Item')"
@@ -120,7 +139,7 @@
   import { getSettings } from '@/stores/settings'
   import { usersStore } from '@/stores/users'
   import { globalStore } from '@/stores/global'
-  import { statusesStore } from '@/stores/statuses'
+  import { cpqStatuses } from '@/cpqStores/statuses'  //customized for cpq demo
   import { getMeta } from '@/stores/meta'
   import {
     whatsappEnabled,
@@ -144,7 +163,7 @@
   const { brand } = getSettings()
   const { isManager } = usersStore()
   const { $dialog, $socket, makeCall } = globalStore()
-  const { statusOptions, getDesignStatus, getDealStatus } = statusesStore()
+  const { cpqStatusOptions, getDesignStatus } = cpqStatuses() //customized for cpq demo
   const { doctypeMeta } = getMeta('Design')
   
   const { updateOnboardingStep } = useOnboarding('frappecrm')

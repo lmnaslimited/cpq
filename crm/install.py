@@ -22,6 +22,7 @@ def after_install(force=False):
 	add_default_lead_sources()
 	add_standard_dropdown_items()
 	add_default_scripts()
+	add_default_design_statuses() #customized for cpq demo
 	frappe.db.commit()
 
 
@@ -63,6 +64,25 @@ def add_default_lead_statuses():
 		doc.position = statuses[status]["position"]
 		doc.insert()
 
+#customized for cpq demo
+def add_default_design_statuses():
+	statuses = {
+		"Draft": {
+			"color": "Orange",
+			"position": 1,
+		}
+	}
+
+	for status in statuses:
+		if frappe.db.exists("CRM Design Status", status):
+			continue
+
+		doc = frappe.new_doc("CRM Design Status")
+		doc.lead_status = status
+		doc.color = statuses[status]["color"]
+		doc.position = statuses[status]["position"]
+		doc.insert()
+#end of customization
 
 def add_default_deal_statuses():
 	statuses = {

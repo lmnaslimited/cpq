@@ -44,7 +44,7 @@ export const cpqStatuses = defineStore('cpq-statuses', () => {
         }
     
         let options = []
-        console.log("status by name", statusesByName)
+
         for (const status in statusesByName) {
           options.push({
             label: statusesByName[status]?.name,
@@ -56,7 +56,7 @@ export const cpqStatuses = defineStore('cpq-statuses', () => {
             },
           })
         }
-        console.log(options)
+
         return options
       }
     

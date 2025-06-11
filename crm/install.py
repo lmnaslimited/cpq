@@ -68,7 +68,7 @@ def add_default_lead_statuses():
 def add_default_design_statuses():
 	statuses = {
 		"Draft": {
-			"color": "Orange",
+			"color": "orange",
 			"position": 1,
 		}
 	}
@@ -78,7 +78,7 @@ def add_default_design_statuses():
 			continue
 
 		doc = frappe.new_doc("CRM Design Status")
-		doc.lead_status = status
+		doc.design_status = status
 		doc.color = statuses[status]["color"]
 		doc.position = statuses[status]["position"]
 		doc.insert()

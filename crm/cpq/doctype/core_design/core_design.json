@@ -1,0 +1,147 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2025-06-11 13:18:39.384291",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "details",
+  "naming_series",
+  "design_template",
+  "item",
+  "column_break_rkpw",
+  "status",
+  "created_by",
+  "section_break_jahy",
+  "dynamic_section",
+  "design_attributes",
+  "cost_deatils_tab",
+  "price",
+  "direct_material_cost",
+  "operating_cost",
+  "column_break_rmdy",
+  "total_cost"
+ ],
+ "fields": [
+  {
+   "fieldname": "details",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "default": "design_template.YYYY.####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "design_template.YYYY.####"
+  },
+  {
+   "fieldname": "design_template",
+   "fieldtype": "Link",
+   "label": "Design Template",
+   "link_filters": "[[\"Item\",\"has_variants\",\"=\",1]]",
+   "options": "Item"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_rkpw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Link",
+   "label": "Created By",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_break_jahy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "design_attributes",
+   "fieldtype": "Table",
+   "label": "Design Attributes",
+   "options": "Item Variant Attribute"
+  },
+  {
+   "fieldname": "cost_deatils_tab",
+   "fieldtype": "Tab Break",
+   "label": "Cost Deatils"
+  },
+  {
+   "fieldname": "price",
+   "fieldtype": "Section Break",
+   "label": "Price"
+  },
+  {
+   "fieldname": "direct_material_cost",
+   "fieldtype": "Currency",
+   "label": "Raw Material Cost"
+  },
+  {
+   "fieldname": "operating_cost",
+   "fieldtype": "Currency",
+   "label": "Operating Cost"
+  },
+  {
+   "fieldname": "column_break_rmdy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_cost",
+   "fieldtype": "Currency",
+   "label": "Total Cost"
+  },
+  {
+   "fieldname": "dynamic_section",
+   "fieldtype": "HTML",
+   "label": "Dynamic Section",
+   "options": "<div id=\"design_core\"></div>"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "link_doctype": "BOM",
+   "link_fieldname": "custom_design"
+  }
+ ],
+ "modified": "2025-06-12 21:36:18.145957",
+ "modified_by": "Administrator",
+ "module": "CPQ",
+ "name": "Core Design",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

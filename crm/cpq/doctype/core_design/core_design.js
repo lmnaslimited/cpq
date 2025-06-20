@@ -25,7 +25,6 @@ frappe.ui.form.on('Core Design', {
 });
 
 const core_design = {
-    field_value_map: {},
     has_invalid_fields: false,
 
     load_fields(frm) {
@@ -41,77 +40,84 @@ const core_design = {
     },
 
     render_fields(fields, frm) {
-        const container = document.getElementById("design_core");
-        container.innerHTML = "";
+        //iteration through the field and rendering the element snipet
+        const html = fields.map(field => {
+            const saved_value = core_design.get_saved_value(frm, field.fieldname)
+                || field.default || field.min || "";
 
-        const row = document.createElement("div");
-        row.style.display = "grid";
-        row.style.gridTemplateColumns = `repeat(3, 1fr)`;
-        row.style.gap = "20px";
+            const template = field.numeric_values
+                ? core_design.range_template()
+                : core_design.select_template();
 
-        fields.forEach(field => {
-            const html = core_design.get_field_html(field, frm);
-            row.insertAdjacentHTML("beforeend", html);
-        });
+            return frappe.render(template, {
+                field,
+                saved_value
+            });
+        }).join("");
 
-        container.appendChild(row);
+        // Wrap the all the render fields in a grid container
+            const gridWrapper = `
+            <div class="design-grid-wrapper" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                ${html}
+            </div>
+        `;
+        //set them as a option in the for dynamic_section (html field)
+        frm.set_df_property("dynamic_section", "options", gridWrapper);
         core_design.attach_listeners(fields, frm);
     },
 
-    get_field_html(field, frm) {
-        const savedValue = core_design.get_saved_value(frm, field.fieldname)
-            || field.default || field.min || "";
-
-        if (field.numeric_values) {
-            return `
-                <div class="form-column">
-                    <div class="frappe-control input-max-width" data-fieldtype="Range" data-fieldname="${field.fieldname}">
-                        <div class="form-group">
-                            <label class="control-label">${field.label}</label>
-                            <div class="control-input flex flex-column" style="gap:8px;">
-                                <input 
-                                    type="range"
-                                    class="form-range attribute-input"
-                                    id="${field.fieldname}_range"
-                                    min="${field.min}"
-                                    max="${field.max}"
-                                    step="${field.step}"
-                                    value="${savedValue}"
-                                    style="width: 100%; accent-color: black;"
-                                />
-                                <input 
-                                    type="number"
-                                    class="form-control"
-                                    id="${field.fieldname}_input"
-                                    min="${field.min}"
-                                    max="${field.max}"
-                                    step="${field.step}"
-                                    value="${savedValue}"
-                                />
-                                <p id="${field.fieldname}_error" class="text-danger medium" style="margin:0;"></p>
-                            </div>
+    range_template() {
+        return `
+            <div class="form-column">
+                <div class="frappe-control input-max-width" data-fieldtype="Range" data-fieldname="{{ field.fieldname }}">
+                    <div class="form-group">
+                        <label class="control-label">{{ field.label }}</label>
+                        <div class="control-input flex flex-column" style="gap:8px;">
+                            <input 
+                                type="range"
+                                class="form-range attribute-input"
+                                id="{{ field.fieldname }}_range"
+                                min="{{ field.min }}"
+                                max="{{ field.max }}"
+                                step="{{ field.step }}"
+                                value="{{ saved_value }}"
+                                style="width: 100%; accent-color: black;"
+                            />
+                            <input 
+                                type="number"
+                                class="form-control"
+                                id="{{ field.fieldname }}_input"
+                                min="{{ field.min }}"
+                                max="{{ field.max }}"
+                                step="{{ field.step }}"
+                                value="{{ saved_value }}"
+                            />
+                            <p id="{{ field.fieldname }}_error" class="text-danger medium" style="margin:0;"></p>
                         </div>
                     </div>
-                </div>`;
-        } else {
-            const options = field.options.map(opt => {
-                const selected = opt.value === savedValue ? "selected" : "";
-                return `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
-            }).join("");
+                </div>
+            </div>
+        `;
+    },
 
-            return `
-                <div class="form-column">
-                    <div class="frappe-control input-max-width" data-fieldtype="Select" data-fieldname="${field.fieldname}">
-                        <div class="form-group">
-                            <label class="control-label">${field.label}</label>
-                            <select class="form-control attribute-input" id="${field.fieldname}">
-                                <option disabled ${!savedValue ? "selected" : ""}>Select ${field.label}</option>
-                                ${options}
-                            </select>
-                        </div>
+    select_template() {
+        return `
+            <div class="form-column">
+                <div class="frappe-control input-max-width" data-fieldtype="Select" data-fieldname="{{ field.fieldname }}">
+                    <div class="form-group">
+                        <label class="control-label">{{ field.label }}</label>
+                        <select class="form-control attribute-input" id="{{ field.fieldname }}">
+                            <option disabled {% if not saved_value %}selected{% endif %}>Select {{ field.label }}</option>
+                            {% for opt in field.options %}
+                                <option value="{{ opt.value }}" {% if opt.value == saved_value %}selected{% endif %}>
+                                    {{ opt.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                </div>`;
-        }
+                </div>
+            </div>
+        `;
     },
 
     attach_listeners(fields, frm) {
@@ -177,7 +183,7 @@ const core_design = {
     },    
 
     update_field(frm, fieldname, value) {
-        this.field_value_map[fieldname] = value;
+  
         let row = (frm.doc.design_attributes || []).find(r => r.attribute.toLowerCase() === fieldname.toLowerCase());
 
         if (!row) {

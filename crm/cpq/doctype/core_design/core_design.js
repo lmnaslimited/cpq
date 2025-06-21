@@ -7,229 +7,148 @@
 // 	},
 // });
 
+let has_invalid_value = new Set(); 
 frappe.ui.form.on('Core Design', {
     refresh(frm) {
         if (frm.doc.design_template) {
-            core_design.load_fields(frm);
+            frm.events.load_and_render_fields(frm);
         }
     },
 
     design_template(frm) {
-        core_design.load_fields(frm);
+        frm.events.load_and_render_fields(frm);
     },
+
     validate(frm) {
-        if (core_design.has_invalid_fields) {
+        if (has_invalid_value && has_invalid_value.size > 0) {
             frappe.throw(__('Please correct all validation errors before saving.'));
         }
     },
-});
 
-const core_design = {
-    has_invalid_fields: false,
-
-    load_fields(frm) {
+    // MAIN LOAD FUNCTION
+    load_and_render_fields(frm) {
         frappe.call({
             method: "crm.cpq.doctype.core_design.api.get_formated_item_variants",
             args: { item_template: frm.doc.design_template },
-            callback: (r) => {
-                if (r.message) {
-                    core_design.render_fields(r.message, frm);
-                }
+            callback: function (r) {
+                if (!r.message) return;
+
+                const fields = frm.events.prepare_field_data(frm, r.message);
+                const html = frappe.render(frm.events.generate_template_html(), { fields });
+                frm.events.render_dynamic_section(frm, html, fields);
             }
         });
     },
 
-    render_fields(fields, frm) {
-        // Step 1: enrich fields with saved value
-        const enriched_fields = fields.map(field => ({
+    prepare_field_data(frm, fields) {
+        return fields.map(field => ({
             ...field,
-            saved_value: core_design.get_saved_value(frm, field.fieldname)
+            saved_value: frm.events.get_saved_value(frm, field.fieldname)
                 || field.default || field.min || ""
         }));
-    
-        // Step 2: one big Jinja-style template
-        const template = `
-        <div class="design-grid-wrapper" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-            {% for(var i = 0; i < fields.length; i++) { 
-                var field = fields[i];
-                var saved_value = field.saved_value;
-            %}
-            <div class="form-column">
-                <div class="frappe-control input-max-width" data-fieldtype="{%= field.numeric_values ? 'Range' : 'Select' %}" data-fieldname="{%= field.fieldname %}">
-                    <div class="form-group">
-                        <label class="control-label">{%= field.label %}</label>
-                        <div class="control-input flex flex-column" style="gap:8px;">
-                        {% if(field.numeric_values) { %}
-                            <input 
-                                type="range"
-                                class="form-range attribute-input"
-                                id="{%= field.fieldname %}_range"
-                                min="{%= field.min %}"
-                                max="{%= field.max %}"
-                                step="{%= field.step %}"
-                                value="{%= saved_value %}"
-                                style="width: 100%; accent-color: black;"
-                            />
-                            <input 
-                                type="number"
-                                class="form-control"
-                                id="{%= field.fieldname %}_input"
-                                min="{%= field.min %}"
-                                max="{%= field.max %}"
-                                step="{%= field.step %}"
-                                value="{%= saved_value %}"
-                            />
-                            <p id="{%= field.fieldname %}_error" class="text-danger medium" style="margin:0;"></p>
-                        {% } else { %}
-                            <select class="form-control attribute-input" id="{%= field.fieldname %}">
-                                <option disabled {%= !saved_value ? 'selected' : '' %}>Select {%= field.label %}</option>
-                                {% for(var j = 0; j < field.options.length; j++) {
-                                    var opt = field.options[j];
-                                %}
-                                    <option value="{%= opt.value %}" {%= opt.value == saved_value ? 'selected' : '' %}>
-                                        {%= opt.label %}
-                                    </option>
+    },
+
+    generate_template_html() {
+        return `
+            <div class="design-grid-wrapper" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                {% for (var i = 0; i < fields.length; i++) {
+                    var field = fields[i];
+                %}
+                <div class="form-column">
+                    <div class="frappe-control input-max-width" data-fieldname="{%= field.fieldname %}">
+                        <div class="form-group">
+                            <label class="control-label">{%= field.label %}</label>
+                            <div class="control-input flex flex-column" style="gap:8px;">
+                                {% if (field.numeric_values) { %}
+                                    <input type="range"
+                                           class="range-field"
+                                           data-fieldname="{%= field.fieldname %}"
+                                           min="{%= field.min %}"
+                                           max="{%= field.max %}"
+                                           step="{%= field.step %}"
+                                           value="{%= field.saved_value %}" 
+                                           style="width: 100%; accent-color: black;"
+                                           />
+                                    <input type="number"
+                                           class="number-field"
+                                           data-fieldname="{%= field.fieldname %}"
+                                           min="{%= field.min %}"
+                                           max="{%= field.max %}"
+                                           step="{%= field.step %}"
+                                           value="{%= field.saved_value %}" />
+                                    <small id="error_{%= field.fieldname %} class="text-danger"></small>
+                                {% } else { %}
+                                    <select class="form-control select-field"
+                                            data-fieldname="{%= field.fieldname %}">
+                                        <option disabled {%= !field.saved_value ? 'selected' : '' %}>Select {%= field.label %}</option>
+                                        {% for (var j = 0; j < field.options.length; j++) {
+                                            var opt = field.options[j];
+                                        %}
+                                            <option value="{%= opt.value %}" {%= opt.value == field.saved_value ? 'selected' : '' %}>
+                                                {%= opt.label %}
+                                            </option>
+                                        {% } %}
+                                    </select>
                                 {% } %}
-                            </select>
-                        {% } %}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            {% } %}
-        </div>
-        `;
-        
-    
-        // Step 3: render once
-        const rendered_html = frappe.render(template, { fields: enriched_fields });
-    
-        // Step 4: insert into form
-        frm.set_df_property("dynamic_section", "options", rendered_html);
-    
-        // Step 5: attach listeners
-        core_design.attach_listeners(enriched_fields, frm);
-    },
-    
-    range_template() {
-        return `
-            <div class="form-column">
-                <div class="frappe-control input-max-width" data-fieldtype="Range" data-fieldname="{{ field.fieldname }}">
-                    <div class="form-group">
-                        <label class="control-label">{{ field.label }}</label>
-                        <div class="control-input flex flex-column" style="gap:8px;">
-                            <input 
-                                type="range"
-                                class="form-range attribute-input"
-                                id="{{ field.fieldname }}_range"
-                                min="{{ field.min }}"
-                                max="{{ field.max }}"
-                                step="{{ field.step }}"
-                                value="{{ saved_value }}"
-                                style="width: 100%; accent-color: black;"
-                            />
-                            <input 
-                                type="number"
-                                class="form-control"
-                                id="{{ field.fieldname }}_input"
-                                min="{{ field.min }}"
-                                max="{{ field.max }}"
-                                step="{{ field.step }}"
-                                value="{{ saved_value }}"
-                            />
-                            <p id="{{ field.fieldname }}_error" class="text-danger medium" style="margin:0;"></p>
-                        </div>
-                    </div>
-                </div>
+                {% } %}
             </div>
         `;
     },
 
-    select_template() {
-        return `
-            <div class="form-column">
-                <div class="frappe-control input-max-width" data-fieldtype="Select" data-fieldname="{{ field.fieldname }}">
-                    <div class="form-group">
-                        <label class="control-label">{{ field.label }}</label>
-                        <select class="form-control attribute-input" id="{{ field.fieldname }}">
-                            <option disabled {% if not saved_value %}selected{% endif %}>Select {{ field.label }}</option>
-                            {% for opt in field.options %}
-                                <option value="{{ opt.value }}" {% if opt.value == saved_value %}selected{% endif %}>
-                                    {{ opt.label }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            </div>
-        `;
-    },
+    render_dynamic_section(frm, html, fields) {
+        frm.set_df_property("dynamic_section", "options", html);
 
-    attach_listeners(fields, frm) {
-        fields.forEach(field => {
-            if (field.numeric_values) {
-                const inputEl = document.getElementById(`${field.fieldname}_input`);
-                const rangeEl = document.getElementById(`${field.fieldname}_range`);
-                if (inputEl) {
-                    inputEl.addEventListener("input", () => {
-                        const isValid = core_design.validate_range_input(frm, field.fieldname, field.min, field.max, field.step, inputEl, rangeEl);
-                        if (isValid) {
-                            rangeEl.value = inputEl.value; 
-                        }
+        frappe.after_ajax(() => {
+            const wrapper = frm.fields_dict["dynamic_section"].$wrapper.get(0);
+
+            fields.forEach(field => {
+                if (field.numeric_values) {
+                    const rangeEl = wrapper.querySelector(`.range-field[data-fieldname="${field.fieldname}"]`);
+                    const numberEl = wrapper.querySelector(`.number-field[data-fieldname="${field.fieldname}"]`);
+                    const errorEl = numberEl?.nextElementSibling;
+
+
+                    if(numberEl){
+                        numberEl.addEventListener("input", () => {
+                            const isValid = frm.events.validate_and_update_numeric_input(frm, field.fieldname, parseFloat(numberEl.value), numberEl, rangeEl, errorEl);
+                            if (isValid) {
+                                rangeEl.value = numberEl.value; 
+                            }
+                        });
+                }
+                    if (rangeEl) {
+                        rangeEl.addEventListener("input", () => {
+                            const isValid = frm.events.validate_and_update_numeric_input(frm, field.fieldname, parseFloat(rangeEl.value), rangeEl, numberEl, errorEl);
+                            if (isValid) {
+                                numberEl.value = rangeEl.value;
+                            }
+                        });
+                    }
+                } else {
+                    const selectEl = wrapper.querySelector(`.select-field[data-fieldname="${field.fieldname}"]`);
+                    selectEl?.addEventListener("change", () => {
+                        frm.events.update_design_attribute(frm, field.fieldname, selectEl.value);
                     });
                 }
-    
-                if (rangeEl) {
-                    rangeEl.addEventListener("input", () => {
-                        const isValid = core_design.validate_range_input(frm, field.fieldname, field.min, field.max, field.step, rangeEl, inputEl);
-                        if (isValid) {
-                            inputEl.value = rangeEl.value;
-                        }
-                    });
-                }
-            } else {
-                const selectEl = document.getElementById(field.fieldname);
-                if (selectEl) {
-                    selectEl.addEventListener("change", () => {
-                        core_design.update_field(frm, field.fieldname, selectEl.value);
-                    });
-                }
-            }
+            });
         });
     },
 
-    validate_range_input(frm, fieldname, min, max, step, sourceEl, targetEl) {
-        const errorEl = document.getElementById(`${fieldname}_error`);
-        const value = parseFloat(sourceEl.value);
-        let errorMessage = "";
-    
-        if (isNaN(value)) {
-            errorMessage = `Value is required`;
-        } else if (value < min || value > max) {
-            errorMessage = `Value should be between ${min} and ${max}`;
-        } else {
-            const quotient = (value - min) / step;
-            if (Math.abs(quotient - Math.round(quotient)) > 1e-6) {
-                errorMessage = `Value should increment by ${step}`;
-            }
-        }
-    
-        if (errorMessage) {
-            errorEl.textContent = errorMessage;
-            core_design.has_invalid_fields = true;
-            return false;
-        } else {
-            errorEl.textContent = "";
-            targetEl.value = value;  
-            core_design.update_field(frm, fieldname, value);
-            core_design.has_invalid_fields = false;  
-            return true;
-        }
-    },    
+    get_saved_value(frm, fieldname) {
+        const row = (frm.doc.design_attributes || []).find(
+            r => r.attribute.toLowerCase() === fieldname.toLowerCase()
+        );
+        return row ? row.attribute_value : null;
+    },
 
-    update_field(frm, fieldname, value) {
-  
-        let row = (frm.doc.design_attributes || []).find(r => r.attribute.toLowerCase() === fieldname.toLowerCase());
+    update_design_attribute(frm, fieldname, value) {
+        let row = (frm.doc.design_attributes || []).find(
+            r => r.attribute.toLowerCase() === fieldname.toLowerCase()
+        );
 
         if (!row) {
             row = frm.add_child('design_attributes', { attribute: fieldname });
@@ -238,10 +157,36 @@ const core_design = {
         frappe.model.set_value(row.doctype, row.name, 'attribute_value', value);
     },
 
-    get_saved_value(frm, fieldname) {
-        const row = (frm.doc.design_attributes || []).find(r => r.attribute.toLowerCase() === fieldname.toLowerCase());
-        return row ? row.attribute_value : null;
+    
+
+    validate_and_update_numeric_input(frm, fieldname, value, sourceElement, targetElement, errorEl) {
+        const min = parseFloat(sourceElement.getAttribute("min"));
+        const max = parseFloat(sourceElement.getAttribute("max"));
+        const step = parseFloat(sourceElement.getAttribute("step"));
+        let errorMessage = "";
+
+        if (isNaN(value)) {
+            errorMessage = __("Value is required");
+        } else if (value < min || value > max) {
+            errorMessage = __(`Value must be between ${min} and ${max}`);
+        } else {
+            const quotient = (value - min) / step;
+            const isStepValid = Math.abs(quotient - Math.round(quotient)) < 1e-6;
+            if (!isStepValid) {
+                errorMessage = __(`Value should increment by ${step}`);
+            }
+        }
+
+        if (errorMessage) {
+            errorEl.innerText = errorMessage;
+            has_invalid_value.add(fieldname);
+            return false
+        } else {
+            errorEl.innerText = "";
+            targetElement.value = value;
+            has_invalid_value.delete(fieldname);
+            frm.events.update_design_attribute(frm, fieldname, value);
+            return true
+        }
     }
-};
-
-
+});

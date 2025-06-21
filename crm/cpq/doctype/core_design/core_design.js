@@ -40,32 +40,77 @@ const core_design = {
     },
 
     render_fields(fields, frm) {
-        //iteration through the field and rendering the element snipet
-        const html = fields.map(field => {
-            const saved_value = core_design.get_saved_value(frm, field.fieldname)
-                || field.default || field.min || "";
-
-            const template = field.numeric_values
-                ? core_design.range_template()
-                : core_design.select_template();
-
-            return frappe.render(template, {
-                field,
-                saved_value
-            });
-        }).join("");
-
-        // Wrap the all the render fields in a grid container
-            const gridWrapper = `
-            <div class="design-grid-wrapper" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                ${html}
+        // Step 1: enrich fields with saved value
+        const enriched_fields = fields.map(field => ({
+            ...field,
+            saved_value: core_design.get_saved_value(frm, field.fieldname)
+                || field.default || field.min || ""
+        }));
+    
+        // Step 2: one big Jinja-style template
+        const template = `
+        <div class="design-grid-wrapper" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+            {% for(var i = 0; i < fields.length; i++) { 
+                var field = fields[i];
+                var saved_value = field.saved_value;
+            %}
+            <div class="form-column">
+                <div class="frappe-control input-max-width" data-fieldtype="{%= field.numeric_values ? 'Range' : 'Select' %}" data-fieldname="{%= field.fieldname %}">
+                    <div class="form-group">
+                        <label class="control-label">{%= field.label %}</label>
+                        <div class="control-input flex flex-column" style="gap:8px;">
+                        {% if(field.numeric_values) { %}
+                            <input 
+                                type="range"
+                                class="form-range attribute-input"
+                                id="{%= field.fieldname %}_range"
+                                min="{%= field.min %}"
+                                max="{%= field.max %}"
+                                step="{%= field.step %}"
+                                value="{%= saved_value %}"
+                                style="width: 100%; accent-color: black;"
+                            />
+                            <input 
+                                type="number"
+                                class="form-control"
+                                id="{%= field.fieldname %}_input"
+                                min="{%= field.min %}"
+                                max="{%= field.max %}"
+                                step="{%= field.step %}"
+                                value="{%= saved_value %}"
+                            />
+                            <p id="{%= field.fieldname %}_error" class="text-danger medium" style="margin:0;"></p>
+                        {% } else { %}
+                            <select class="form-control attribute-input" id="{%= field.fieldname %}">
+                                <option disabled {%= !saved_value ? 'selected' : '' %}>Select {%= field.label %}</option>
+                                {% for(var j = 0; j < field.options.length; j++) {
+                                    var opt = field.options[j];
+                                %}
+                                    <option value="{%= opt.value %}" {%= opt.value == saved_value ? 'selected' : '' %}>
+                                        {%= opt.label %}
+                                    </option>
+                                {% } %}
+                            </select>
+                        {% } %}
+                        </div>
+                    </div>
+                </div>
             </div>
+            {% } %}
+        </div>
         `;
-        //set them as a option in the for dynamic_section (html field)
-        frm.set_df_property("dynamic_section", "options", gridWrapper);
-        core_design.attach_listeners(fields, frm);
+        
+    
+        // Step 3: render once
+        const rendered_html = frappe.render(template, { fields: enriched_fields });
+    
+        // Step 4: insert into form
+        frm.set_df_property("dynamic_section", "options", rendered_html);
+    
+        // Step 5: attach listeners
+        core_design.attach_listeners(enriched_fields, frm);
     },
-
+    
     range_template() {
         return `
             <div class="form-column">

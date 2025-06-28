@@ -76,7 +76,11 @@ frappe.ui.form.on('Core Design', {
                                            max="{%= field.max %}"
                                            step="{%= field.step %}"
                                            value="{%= field.saved_value %}" />
-                                    <small id="error_{%= field.fieldname %} class="text-danger"></small>
+                                   
+                                    <small id="error_{%= field.fieldname %}" class="text-danger"></small>
+                                    <small class="text-muted">
+        From Range: {%= field.min %}, To Range: {%= field.max %}, Increment: {%= field.step %}
+    </small>
                                 {% } else { %}
                                     <select class="form-control select-field"
                                             data-fieldname="{%= field.fieldname %}">
@@ -99,44 +103,98 @@ frappe.ui.form.on('Core Design', {
         `;
     },
 
+    // render_dynamic_section(frm, html, fields) {
+    //     frm.set_df_property("dynamic_section", "options", html);
+
+    //     frappe.after_ajax(() => {
+    //         const wrapper = frm.fields_dict["dynamic_section"].$wrapper.get(0);
+
+    //         fields.forEach(field => {
+    //             if (field.numeric_values) {
+    //                 const rangeEl = wrapper.querySelector(`.range-field[data-fieldname="${field.fieldname}"]`);
+    //                 const numberEl = wrapper.querySelector(`.number-field[data-fieldname="${field.fieldname}"]`);
+    //                 const errorEl = numberEl?.nextElementSibling;
+
+
+    //                 if(numberEl){
+    //                     numberEl.addEventListener("input", () => {
+    //                         const isValid = frm.events.validate_and_update_numeric_input(frm, field.fieldname, parseFloat(numberEl.value), numberEl, rangeEl, errorEl);
+    //                         if (isValid) {
+    //                             rangeEl.value = numberEl.value; 
+    //                         }
+    //                     });
+    //             }
+    //                 if (rangeEl) {
+    //                     rangeEl.addEventListener("input", () => {
+    //                         const isValid = frm.events.validate_and_update_numeric_input(frm, field.fieldname, parseFloat(rangeEl.value), rangeEl, numberEl, errorEl);
+    //                         if (isValid) {
+    //                             numberEl.value = rangeEl.value;
+    //                         }
+    //                     });
+    //                 }
+    //             } else {
+    //                 const selectEl = wrapper.querySelector(`.select-field[data-fieldname="${field.fieldname}"]`);
+    //                 selectEl?.addEventListener("change", () => {
+    //                     frm.events.update_design_attribute(frm, field.fieldname, selectEl.value);
+    //                 });
+    //             }
+    //         });
+    //     });
+    // },
+
+    //followed jquery which frappe uses for there html event bind
     render_dynamic_section(frm, html, fields) {
+        console.log("core design hello event bind")
         frm.set_df_property("dynamic_section", "options", html);
-
+    
         frappe.after_ajax(() => {
-            const wrapper = frm.fields_dict["dynamic_section"].$wrapper.get(0);
-
+            const $wrapper = $(frm.fields_dict["dynamic_section"].$wrapper.get(0));
+    
             fields.forEach(field => {
                 if (field.numeric_values) {
-                    const rangeEl = wrapper.querySelector(`.range-field[data-fieldname="${field.fieldname}"]`);
-                    const numberEl = wrapper.querySelector(`.number-field[data-fieldname="${field.fieldname}"]`);
-                    const errorEl = numberEl?.nextElementSibling;
-
-
-                    if(numberEl){
-                        numberEl.addEventListener("input", () => {
-                            const isValid = frm.events.validate_and_update_numeric_input(frm, field.fieldname, parseFloat(numberEl.value), numberEl, rangeEl, errorEl);
-                            if (isValid) {
-                                rangeEl.value = numberEl.value; 
-                            }
-                        });
-                }
-                    if (rangeEl) {
-                        rangeEl.addEventListener("input", () => {
-                            const isValid = frm.events.validate_and_update_numeric_input(frm, field.fieldname, parseFloat(rangeEl.value), rangeEl, numberEl, errorEl);
-                            if (isValid) {
-                                numberEl.value = rangeEl.value;
-                            }
-                        });
-                    }
+                    const $rangeEl = $wrapper.find(`.range-field[data-fieldname="${field.fieldname}"]`);
+                    const $numberEl = $wrapper.find(`.number-field[data-fieldname="${field.fieldname}"]`);
+                    const $errorEl = $numberEl.next('.text-danger');
+    
+                    $numberEl.on("input", function () {
+                        const value = parseFloat(this.value);
+                        const isValid = frm.events.validate_and_update_numeric_input(
+                            frm,
+                            field.fieldname,
+                            value,
+                            this,
+                            $rangeEl.get(0),
+                            $errorEl.get(0)
+                        );
+                        if (isValid) {
+                            $rangeEl.val(this.value);
+                        }
+                    });
+    
+                    $rangeEl.on("input", function () {
+                        const value = parseFloat(this.value);
+                        const isValid = frm.events.validate_and_update_numeric_input(
+                            frm,
+                            field.fieldname,
+                            value,
+                            this,
+                            $numberEl.get(0),
+                            $errorEl.get(0)
+                        );
+                        if (isValid) {
+                            $numberEl.val(this.value);
+                        }
+                    });
                 } else {
-                    const selectEl = wrapper.querySelector(`.select-field[data-fieldname="${field.fieldname}"]`);
-                    selectEl?.addEventListener("change", () => {
-                        frm.events.update_design_attribute(frm, field.fieldname, selectEl.value);
+                    const $selectEl = $wrapper.find(`.select-field[data-fieldname="${field.fieldname}"]`);
+                    $selectEl.on("change", function () {
+                        frm.events.update_design_attribute(frm, field.fieldname, this.value);
                     });
                 }
             });
         });
     },
+    
 
     get_saved_value(frm, fieldname) {
         const row = (frm.doc.design_attributes || []).find(
